@@ -71,20 +71,26 @@ def get_network(name, batch_size):
             num_layers=n_layer, batch_size=batch_size, dtype=dtype
         )
     elif name == "mobilenet":
-        mod, params = relay.testing.mobilenet.get_workload(batch_size=batch_size, dtype=dtype)
+        mod, params = relay.testing.mobilenet.get_workload(
+            batch_size=batch_size, dtype=dtype
+        )
     elif name == "squeezenet_v1.1":
         mod, params = relay.testing.squeezenet.get_workload(
             batch_size=batch_size, version="1.1", dtype=dtype
         )
     elif name == "inception_v3":
         input_shape = (batch_size, 3, 299, 299)
-        mod, params = relay.testing.inception_v3.get_workload(batch_size=batch_size, dtype=dtype)
+        mod, params = relay.testing.inception_v3.get_workload(
+            batch_size=batch_size, dtype=dtype
+        )
     elif name == "mxnet":
         # an example for mxnet model
         from mxnet.gluon.model_zoo.vision import get_model
 
         block = get_model("resnet18_v1", pretrained=True)
-        mod, params = relay.frontend.from_mxnet(block, shape={input_name: input_shape}, dtype=dtype)
+        mod, params = relay.frontend.from_mxnet(
+            block, shape={input_name: input_shape}, dtype=dtype
+        )
         net = mod["main"]
         net = relay.Function(
             net.params, relay.nn.softmax(net.body), None, net.type_params, net.attrs
@@ -152,7 +158,11 @@ tuning_option = {
 
 # You can skip the implementation of this function for this tutorial.
 def tune_kernels(
-    tasks, measure_option, tuner="gridsearch", early_stopping=None, log_filename="tuning.log"
+    tasks,
+    measure_option,
+    tuner="gridsearch",
+    early_stopping=None,
+    log_filename="tuning.log",
 ):
 
     for i, task in enumerate(tasks):
@@ -219,6 +229,7 @@ def tune_and_evaluate(tuning_opt):
     tasks = autotvm.task.extract_from_program(
         mod["main"], target=target, params=params, ops=(relay.op.get("nn.conv2d"),)
     )
+    print(mod, params)
 
     # run tuning tasks
     tune_kernels(tasks, **tuning_opt)
@@ -302,4 +313,3 @@ def tune_and_evaluate(tuning_opt):
 #    Config for target=llvm -keys=cpu -link-params=0, workload=('dense_pack.x86', ('TENSOR', (1, 512), 'float32'), ('TENSOR', (1000, 512), 'float32'), None, 'float32') is missing in ApplyGraphBest context. A fallback configuration is used, which may bring great performance regression.
 #    Evaluate inference time cost...
 #    Mean inference time (std dev): 3.16 ms (0.03 ms)
-

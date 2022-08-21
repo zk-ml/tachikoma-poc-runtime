@@ -1,8 +1,11 @@
-import numpy
+import numpy as np
 import tvm
 from tvm.relay.op.contrib.dnnl import pattern_table
 from tvm import relay
+from tvm.relay import testing
+import tvm.contrib.graph_executor as runtime
 
+dtype = "float32"
 """
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
@@ -23,8 +26,8 @@ mod = tvm.IRModule()
 mod["main"] = relay.Function([x, w], z)
 """
 
-a = relay.var("a", shape=(1, 10), dtype="float32")
-b = relay.var("b", shape=(1, 10), dtype="float32")
+a = relay.var("a", shape=(1, 10), dtype=dtype)
+b = relay.var("b", shape=(1, 10), dtype=dtype)
 out = relay.add(a, b)
 
 func = relay.Function([a, b], out)
