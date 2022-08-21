@@ -6,6 +6,7 @@ from tvm.relay import testing
 import tvm.contrib.graph_executor as runtime
 
 dtype = "float32"
+scale = 1
 """
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
@@ -25,6 +26,9 @@ z = relay.nn.relu(y)
 mod = tvm.IRModule()
 mod["main"] = relay.Function([x, w], z)
 """
+
+da = np.random.uniform(-scale, scale, size=(1, 10)).astype(dtype)
+db = np.random.uniform(-scale, scale, size=(1, 10)).astype(dtype)
 
 a = relay.var("a", shape=(1, 10), dtype=dtype)
 b = relay.var("b", shape=(1, 10), dtype=dtype)
@@ -46,7 +50,7 @@ mod = relay.transform.PartitionGraph()(mod)
 print(mod["main"].astext(show_meta_data=False), "\n")
 
 with tvm.transform.PassContext(opt_level=0):
-    graph, module, params = relay.build(mod, target="llvm")
+    graph, module, params = relay.build(mod, target="llvm", params={"a": da, "b": db})
 
 with open("graph.json", "w") as f:
     f.write(graph)
