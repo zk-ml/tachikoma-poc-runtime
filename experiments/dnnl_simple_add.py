@@ -71,23 +71,7 @@ with open("graph.json", "w") as f:
 
 print(lib, params)
 
-
-def update_lib(lib):
-    source_dir = "/data/catalyst/tachikoma-tvm"
-    contrib_path = os.path.join(source_dir, "src", "runtime", "contrib")
-    kwargs = {}
-    kwargs["options"] = ["-O2", "-std=c++14", "-I" + contrib_path]
-    tmp_path = utils.tempdir()
-    lib_name = "lib.so"
-    lib_path = tmp_path.relpath(lib_name)
-    lib.export_library(lib_path, fcompile=False, **kwargs)
-    lib = tvm_runtime.load_module(lib_path)
-
-    return lib
-
-
 device = tvm.cpu()
-# lib = update_lib(lib)
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
 for name, data in params.items():
     rt_mod.set_input(name, data)
