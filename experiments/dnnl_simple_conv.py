@@ -36,13 +36,13 @@ patterns = pattern_table()
 # print(patterns)
 
 mod = relay.transform.MergeComposite(patterns)(mod)
-print(mod["main"].astext(show_meta_data=False))
+print(mod["main"].astext(show_meta_data=False), "\n")
 mod = relay.transform.AnnotateTarget(["dnnl"])(mod)
-print(mod["main"].astext(show_meta_data=False))
+print(mod["main"].astext(show_meta_data=False), "\n")
 mod = relay.transform.MergeCompilerRegions()(mod)
-print(mod["main"].astext(show_meta_data=False))
+print(mod["main"].astext(show_meta_data=False), "\n")
 mod = relay.transform.PartitionGraph()(mod)
-print(mod["main"].astext(show_meta_data=False))
+print(mod["main"].astext(show_meta_data=False), "\n")
 
 with tvm.transform.PassContext(opt_level=0):
     graph, module, params = relay.build(mod, target="llvm")
