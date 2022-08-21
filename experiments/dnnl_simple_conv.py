@@ -40,7 +40,10 @@ mod = relay.transform.AnnotateTarget(["dnnl"])(mod)
 mod = relay.transform.MergeCompilerRegions()(mod)
 mod = relay.transform.PartitionGraph()(mod)
 
-graph, module, params = relay.build(mod, target="llvm")
+print(mod)
 
-with open('graph.json', 'w') as f:
+with tvm.transform.PassContext(opt_level=0):
+    graph, module, params = relay.build(mod, target="llvm")
+
+with open("graph.json", "w") as f:
     f.write(graph)
