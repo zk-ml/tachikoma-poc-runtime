@@ -114,4 +114,4 @@ graph, module, params = tvm.relay.build(mod, target="llvm")
 
 import json
 with open('graph.json', 'w') as f:
-    json.dump(graph, f)
+    f.write(graph)
