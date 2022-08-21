@@ -9,24 +9,7 @@ from tvm.relay import testing
 from tvm.autotvm.tuner import XGBTuner, GATuner, RandomTuner, GridSearchTuner
 from tvm.autotvm.graph_tuner import DPTuner, PBQPTuner
 import tvm.contrib.graph_executor as runtime
-
-"""
-def _register_external_op_helper(op_name, supported=True):
-    @tvm.ir.register_op_attr(op_name, "target.dnnl")
-    def _func_wrapper(attrs, args):
-        return supported
-
-    return _func_wrapper
-
-
-_register_external_op_helper("nn.batch_norm")
-_register_external_op_helper("nn.conv2d")
-_register_external_op_helper("nn.dense")
-_register_external_op_helper("nn.relu")
-_register_external_op_helper("add")
-_register_external_op_helper("subtract")
-_register_external_op_helper("multiply")
-"""
+import os 
 
 def make_pattern(with_bias=True):
     data = wildcard()
@@ -46,6 +29,23 @@ def pattern_table():
     conv2d_relu_pat = ("dnnl.conv2d_relu", make_pattern(with_bias=False))
     dnnl_patterns = [conv2d_bias_relu_pat, conv2d_relu_pat]
     return dnnl_patterns
+
+target = "llvm"
+
+batch_size = 1
+dtype = "float32"
+model_name = "resnet-18"
+log_file = "%s.log" % model_name
+graph_opt_sch_file = "%s_graph_opt.log" % model_name
+
+# Set the input name of the graph
+# For ONNX models, it is typically "0".
+input_name = "data"
+
+# Set number of threads used for tuning based on the number of
+# physical CPU cores on your machine.
+num_threads = 1
+os.environ["TVM_NUM_THREADS"] = str(num_threads)
 
 def get_network(name, batch_size):
     """Get the symbol definition and random weight of a network"""
@@ -103,7 +103,7 @@ y = tvm.relay.nn.conv2d(
 
 #mod = tvm.IRModule()
 #mod["main"] = tvm.relay.Function([x], y)
-mod = get_network("resnet18", 1)
+mod, params, data_shape, out_shape = get_network(model_name, batch_size)
 
 mod = tvm.relay.transform.MergeComposite(pattern_table())(mod)
 mod = tvm.relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
