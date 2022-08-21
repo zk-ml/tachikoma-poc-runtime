@@ -54,3 +54,6 @@ with tvm.transform.PassContext(opt_level=0):
 
 with open("graph.json", "w") as f:
     f.write(graph)
+
+
+print(graph, module, params)
