@@ -4,7 +4,7 @@ import tvm.relay
 from tvm.relay.dataflow_pattern import is_op, wildcard
 from tvm.relay.op.contrib.register import register_pattern_table
 
-
+"""
 def _register_external_op_helper(op_name, supported=True):
     @tvm.ir.register_op_attr(op_name, "target.dnnl")
     def _func_wrapper(attrs, args):
@@ -20,7 +20,7 @@ _register_external_op_helper("nn.relu")
 _register_external_op_helper("add")
 _register_external_op_helper("subtract")
 _register_external_op_helper("multiply")
-
+"""
 
 def make_pattern(with_bias=True):
     data = wildcard()
@@ -59,13 +59,13 @@ y = tvm.relay.nn.conv2d(
 mod = tvm.IRModule()
 mod["main"] = tvm.relay.Function([x], y)
 
-mod = tvm.relay.transform.MergeComposite(pattern_table)(mod)
+mod = tvm.relay.transform.MergeComposite(pattern_table())(mod)
 mod = tvm.relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
 mod = tvm.relay.transform.MergeCompilerRegions()(mod)  # Output: Figure 3
 mod = tvm.relay.transform.PartitionGraph()(mod)  # Output: Figure 4
 
-with tvm.transform.PassContext(opt_level=3):
-    graph, module, params = tvm.relay.build(mod, target="llvm")
+graph, module, params = tvm.relay.build(mod, target="llvm")
 
 print(graph)
-
+#print(module)
+print(params)
