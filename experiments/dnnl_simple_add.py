@@ -87,7 +87,7 @@ def update_lib(lib):
 
 
 device = tvm.cpu()
-lib = update_lib(lib)
+# lib = update_lib(lib)
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
 for name, data in params.items():
     rt_mod.set_input(name, data)
