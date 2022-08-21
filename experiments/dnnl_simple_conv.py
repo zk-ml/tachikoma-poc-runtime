@@ -101,9 +101,9 @@ y = tvm.relay.nn.conv2d(
     x, w, padding=(1, 1), dilation=(1, 1), groups=1, channels=1, kernel_size=(1, 1)
 )
 
-#mod = tvm.IRModule()
-#mod["main"] = tvm.relay.Function([x], y)
-mod, params, data_shape, out_shape = get_network(model_name, batch_size)
+mod = tvm.IRModule()
+mod["main"] = tvm.relay.Function([x], y)
+#mod, params, data_shape, out_shape = get_network(model_name, batch_size)
 
 mod = tvm.relay.transform.MergeComposite(pattern_table())(mod)
 mod = tvm.relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
