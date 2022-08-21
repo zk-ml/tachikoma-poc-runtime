@@ -1,34 +1,8 @@
 import numpy
 import tvm
-import tvm.relay
-from tvm.relay.dataflow_pattern import is_op, wildcard
-from tvm.relay.op.contrib.register import register_pattern_table
-import tvm
-from tvm import relay, autotvm
-from tvm.relay import testing
-from tvm.autotvm.tuner import XGBTuner, GATuner, RandomTuner, GridSearchTuner
-from tvm.autotvm.graph_tuner import DPTuner, PBQPTuner
-import tvm.contrib.graph_executor as runtime
-import os 
-
-def make_pattern(with_bias=True):
-    data = wildcard()
-    weight = wildcard()
-    bias = wildcard()
-    conv = is_op("nn.conv2d")(data, weight)
-    if with_bias:
-        conv_out = is_op("add")(conv, bias)
-    else:
-        conv_out = conv
-    return is_op("nn.relu")(conv_out)
-
-
-@register_pattern_table("dnnl")
-def pattern_table():
-    conv2d_bias_relu_pat = ("dnnl.conv2d_bias_relu", make_pattern(with_bias=True))
-    conv2d_relu_pat = ("dnnl.conv2d_relu", make_pattern(with_bias=False))
-    dnnl_patterns = [conv2d_bias_relu_pat, conv2d_relu_pat]
-    return dnnl_patterns
+from tvm.relay.op.contrib.dnnl import pattern_table
+from tvm import relay
+import os
 
 target = "llvm"
 
@@ -71,17 +45,6 @@ def get_network(name, batch_size):
     elif name == "inception_v3":
         input_shape = (batch_size, 3, 299, 299)
         mod, params = relay.testing.inception_v3.get_workload(batch_size=batch_size, dtype=dtype)
-    elif name == "mxnet":
-        # an example for mxnet model
-        from mxnet.gluon.model_zoo.vision import get_model
-
-        block = get_model("resnet18_v1", pretrained=True)
-        mod, params = relay.frontend.from_mxnet(block, shape={input_name: input_shape}, dtype=dtype)
-        net = mod["main"]
-        net = relay.Function(
-            net.params, relay.nn.softmax(net.body), None, net.type_params, net.attrs
-        )
-        mod = tvm.IRModule.from_expr(net)
     else:
         raise ValueError("Unsupported network: " + name)
 
@@ -102,15 +65,15 @@ y = tvm.relay.nn.conv2d(
 )
 
 mod = tvm.IRModule()
-mod["main"] = tvm.relay.Function([x], y)
+mod["main"] = relay.Function([x], y)
 #mod, params, data_shape, out_shape = get_network(model_name, batch_size)
 
-mod = tvm.relay.transform.MergeComposite(pattern_table())(mod)
-mod = tvm.relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
-mod = tvm.relay.transform.MergeCompilerRegions()(mod)  # Output: Figure 3
-mod = tvm.relay.transform.PartitionGraph()(mod)  # Output: Figure 4
+mod = relay.transform.MergeComposite(pattern_table)(mod)
+mod = relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
+mod = relay.transform.MergeCompilerRegions()(mod)  # Output: Figure 3
+mod = relay.transform.PartitionGraph()(mod)  # Output: Figure 4
 
-graph, module, params = tvm.relay.build(mod, target="llvm")
+graph, module, params = relay.build(mod, target="llvm")
 
 import json
 with open('graph.json', 'w') as f:
