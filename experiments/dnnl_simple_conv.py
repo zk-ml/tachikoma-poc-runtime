@@ -25,11 +25,9 @@ mod["main"] = relay.Function([x, w], z)
 
 a = relay.var("a", shape=(1, 10), dtype="float32")
 b = relay.var("b", shape=(1, 10), dtype="float32")
-c = relay.var("c", shape=(1, 10), dtype="float32")
 out = relay.add(a, b)
-out = relay.add(out, c)
 
-func = relay.Function([a, b, c], out)
+func = relay.Function([a, b], out)
 mod = tvm.IRModule.from_expr(func)
 
 patterns = pattern_table()
