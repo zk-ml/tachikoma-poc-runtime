@@ -69,7 +69,7 @@ with tvm.transform.PassContext(opt_level=0):
 with open("graph.json", "w") as f:
     f.write(graph)
 
-print(lib.__dict__, params)
+print(lib, params)
 
 
 def update_lib(lib):
