@@ -7,7 +7,7 @@ import os
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
 eltype = "uint16"
-scale = 1
+scale = 100
 
 data = numpy.random.uniform(-scale, scale, size=dshape).astype(eltype)
 kern = numpy.random.uniform(-scale, scale, size=kshape).astype(eltype)
