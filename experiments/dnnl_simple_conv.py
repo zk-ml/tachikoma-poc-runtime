@@ -112,6 +112,6 @@ mod = tvm.relay.transform.PartitionGraph()(mod)  # Output: Figure 4
 
 graph, module, params = tvm.relay.build(mod, target="llvm")
 
-print(graph)
-#print(module)
-print(params)
+import json
+with open('graph.json', 'w') as f:
+    json.dump(graph, f)
