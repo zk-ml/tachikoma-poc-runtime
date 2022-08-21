@@ -68,7 +68,7 @@ mod = tvm.IRModule()
 mod["main"] = relay.Function([x], y)
 #mod, params, data_shape, out_shape = get_network(model_name, batch_size)
 
-mod = relay.transform.MergeComposite(pattern_table)(mod)
+mod = relay.transform.MergeComposite(pattern_table())(mod)
 mod = relay.transform.AnnotateTarget(["dnnl"])(mod)  # Output: Figure 2
 mod = relay.transform.MergeCompilerRegions()(mod)  # Output: Figure 3
 mod = relay.transform.PartitionGraph()(mod)  # Output: Figure 4
