@@ -12,7 +12,7 @@ scale = 1
 data = numpy.random.uniform(-scale, scale, size=dshape).astype(eltype)
 kern = numpy.random.uniform(-scale, scale, size=kshape).astype(eltype)
 
-w = relay.const(kern)
+w = relay.var(kern)
 x = relay.var("x", shape=dshape, dtype=eltype)
 y = relay.nn.conv2d(
     x, w, padding=(1, 1), dilation=(1, 1), groups=1, channels=1, kernel_size=(1, 1)
