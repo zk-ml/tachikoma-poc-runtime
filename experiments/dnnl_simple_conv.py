@@ -69,7 +69,7 @@ with tvm.transform.PassContext(opt_level=0):
 with open("graph.json", "w") as f:
     f.write(graph)
 
-print(graph, lib, params)
+print(lib, params)
 
 
 def update_lib(lib):
@@ -98,3 +98,4 @@ out_shapes = [[1, 10]]
 for idx, shape in enumerate(out_shapes):
     out = tvm.nd.empty(shape, device=device)
     out = rt_mod.get_output(idx, out)
+    print(out)
