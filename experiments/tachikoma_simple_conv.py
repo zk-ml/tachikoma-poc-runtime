@@ -18,7 +18,7 @@ from tvm.contrib import utils
 import onnx
 from tvm.contrib.download import download_testdata
 
-dtype = "uint16"
+dtype = "int8"
 scale = 1
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
