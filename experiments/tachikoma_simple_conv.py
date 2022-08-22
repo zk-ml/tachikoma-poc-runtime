@@ -52,6 +52,7 @@ mod = relay.transform.PartitionGraph()(mod)
 print(mod["main"].astext(show_meta_data=False), "\n")
 
 map_inputs = {"weight": kern, "x": data}
+
 with tvm.transform.PassContext(opt_level=0):
     graph, lib, params = relay.build(mod, target="llvm", params=map_inputs)
 
@@ -66,7 +67,7 @@ for name, data in params.items():
     rt_mod.set_input(name, data)
 rt_mod.run()
 
-out_shapes = [[64, 1, 32, 32]]
+out_shapes = [[64, 1, 34, 34]]
 
 for idx, shape in enumerate(out_shapes):
     out = tvm.nd.empty(shape, device=device)
