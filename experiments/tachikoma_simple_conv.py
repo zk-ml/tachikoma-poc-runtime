@@ -51,7 +51,7 @@ print(mod["main"].astext(show_meta_data=False), "\n")
 mod = relay.transform.PartitionGraph()(mod)
 print(mod["main"].astext(show_meta_data=False), "\n")
 
-map_inputs = {"weight": data, "x": kern}
+map_inputs = {"weight": kern, "x": data}
 with tvm.transform.PassContext(opt_level=0):
     graph, lib, params = relay.build(mod, target="llvm", params=map_inputs)
 
