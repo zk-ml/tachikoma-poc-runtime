@@ -18,19 +18,18 @@ from tvm.contrib import utils
 import onnx
 from tvm.contrib.download import download_testdata
 
-dtype = "float32"
+dtype = "uint16"
 scale = 1
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
 
-eltype = "float32"
 scale = 100
 
-data = np.random.uniform(-scale, scale, size=dshape).astype(eltype)
-kern = np.random.uniform(-scale, scale, size=kshape).astype(eltype)
+data = np.random.uniform(-scale, scale, size=dshape).astype(dtype)
+kern = np.random.uniform(-scale, scale, size=kshape).astype(dtype)
 
-w = relay.var("weight", shape=kshape, dtype=eltype)
-x = relay.var("x", shape=dshape, dtype=eltype)
+w = relay.var("weight", shape=kshape, dtype=dtype)
+x = relay.var("x", shape=dshape, dtype=dtype)
 y = relay.nn.conv2d(
     x, w, padding=(1, 1), dilation=(1, 1), groups=1, channels=1, kernel_size=(1, 1)
 )
