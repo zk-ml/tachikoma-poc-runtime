@@ -38,6 +38,7 @@ dev = tvm.cpu(0)
 with tvm.transform.PassContext(opt_level=0):
     lib = relay.build(mod, target=target, params=params)
 
+print(lib)
 
 from tvm.contrib import graph_executor
 
