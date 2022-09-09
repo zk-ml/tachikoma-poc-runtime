@@ -28,6 +28,24 @@ shape_list = [
     for i in list(traced_model.graph.inputs())[1:]
 ]
 
-mod_bert, params_bert = relay.frontend.pytorch.from_pytorch(
+print(shape_list)
+mod, params = relay.frontend.pytorch.from_pytorch(
     traced_model, shape_list, default_dtype="float32"
 )
+
+target = tvm.target.Target("llvm", host="llvm")
+dev = tvm.cpu(0)
+with tvm.transform.PassContext(opt_level=0):
+    lib = relay.build(mod, target=target, params=params)
+
+
+from tvm.contrib import graph_executor
+
+dtype = "float32"
+m = graph_executor.GraphModule(lib["default"](dev))
+# Set inputs
+# m.set_input(input_name, tvm.nd.array(.astype(dtype)))
+# Execute
+# m.run()
+# Get outputs
+# tvm_output = m.get_output(0)
