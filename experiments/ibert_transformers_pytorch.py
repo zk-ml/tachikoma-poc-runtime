@@ -54,4 +54,4 @@ m.run()
 # Get outputs
 tvm_output = m.get_output(0).numpy()
 
-print(np.absolute((tvm_output - torch_output))
+print(np.absolute(tvm_output - torch_output))
