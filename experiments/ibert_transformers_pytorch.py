@@ -51,6 +51,6 @@ m.set_input(input_name, tvm.nd.array(inputs.numpy()))
 # Execute
 m.run()
 # Get outputs
-tvm_output = m.get_output(0)
+tvm_output = m.get_output(0).numpy()
 
 print((tvm_output - torch_output).abs())
