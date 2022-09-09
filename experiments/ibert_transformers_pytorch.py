@@ -3,7 +3,7 @@ import tvm
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from tvm import relay
 
-model_name = "kssteven/ibert-roberta-base"
+model_name = "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False)
 
