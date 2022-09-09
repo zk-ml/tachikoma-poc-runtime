@@ -3,7 +3,9 @@ import tvm
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
-model = AutoModelForMaskedLM.from_pretrained("kssteven/ibert-roberta-base")
+model = AutoModelForMaskedLM.from_pretrained(
+    "kssteven/ibert-roberta-base", return_dict=False
+)
 
 text = "I'm sorry, Dave."
 inputs = tokenizer(text, return_tensors="pt")["input_ids"]
