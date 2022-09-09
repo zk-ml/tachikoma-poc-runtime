@@ -16,7 +16,7 @@ for p in model.parameters():
     p.requires_grad_(False)
 
 res = model(inputs)
-print(res)
+print(inputs, res)
 
 traced_model = torch.jit.trace(model, inputs)
 traced_model.eval()
@@ -43,10 +43,9 @@ from tvm.contrib import graph_executor
 
 input_name = "input_ids"
 
-dtype = "float32"
 m = graph_executor.GraphModule(lib["default"](dev))
 # Set inputs
-m.set_input(input_name, tvm.nd.array(inputs.numpy().astype(dtype)))
+m.set_input(input_name, tvm.nd.array(inputs.numpy()))
 # Execute
 m.run()
 # Get outputs
