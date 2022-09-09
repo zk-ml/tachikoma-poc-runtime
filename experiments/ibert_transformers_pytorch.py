@@ -1,10 +1,9 @@
-from transformers import RobertaTokenizer, IBertModel
 import torch
 import tvm
+from transformers import AutoTokenizer, AutoModelForMaskedLM
 
-tokenizer = RobertaTokenizer.from_pretrained("kssteven/ibert-roberta-base")
-model = IBertModel.from_pretrained("kssteven/ibert-roberta-base")
-
+tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
+model = AutoModelForMaskedLM.from_pretrained("kssteven/ibert-roberta-base")
 
 text = "I'm sorry, Dave."
 inputs = tokenizer(text, return_tensors="pt")
