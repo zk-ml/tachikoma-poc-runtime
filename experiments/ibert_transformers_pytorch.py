@@ -2,6 +2,7 @@ import torch
 import tvm
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from tvm import relay
+import numpy as np
 
 model_name = "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -53,4 +54,4 @@ m.run()
 # Get outputs
 tvm_output = m.get_output(0).numpy()
 
-print((tvm_output - torch_output).abs())
+print(np.absolute((tvm_output - torch_output))
