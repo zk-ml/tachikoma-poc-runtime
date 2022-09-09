@@ -1,0 +1,28 @@
+from transformers import RobertaTokenizer, IBertModel
+import torch
+import tvm
+
+tokenizer = RobertaTokenizer.from_pretrained("kssteven/ibert-roberta-base")
+model = IBertModel.from_pretrained("kssteven/ibert-roberta-base")
+
+
+text = "I'm sorry, Dave."
+inputs = tokenizer(text, return_tensors="pt")
+
+model.eval()
+for p in model.parameters():
+    p.requires_grad_(False)
+
+traced_model = torch.jit.trace(model, inputs)
+traced_model.eval()
+for p in traced_model.parameters():
+    p.requires_grad_(False)
+
+shape_list = [
+    (i.debugName().split(".")[0], i.type().sizes())
+    for i in list(traced_model.graph.inputs())[1:]
+]
+
+mod_bert, params_bert = tvm.relay.frontend.pytorch.from_pytorch(
+    traced_model, shape_list, default_dtype="float32"
+)
