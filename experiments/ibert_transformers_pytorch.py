@@ -30,7 +30,7 @@ shape_list = [
 
 print(shape_list)
 mod, params = relay.frontend.pytorch.from_pytorch(
-    traced_model, shape_list, default_dtype="float32"
+    traced_model, shape_list, default_dtype="int8"
 )
 
 target = tvm.target.Target("llvm", host="llvm")
