@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 from tvm import relay
 import numpy as np
 
-model_name = "bert-base-uncased"
+model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False)
 
@@ -32,8 +32,8 @@ mod, params = relay.frontend.pytorch.from_pytorch(
     traced_model, shape_list, default_dtype="int8"
 )
 
-with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=127.0):
-    mod = relay.quantize.quantize(mod, params)
+# with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=127.0):
+#    mod = relay.quantize.quantize(mod, params)
 
 print(mod)
 
