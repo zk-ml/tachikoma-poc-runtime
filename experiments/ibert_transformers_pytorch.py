@@ -30,7 +30,10 @@ mod, params = relay.frontend.pytorch.from_pytorch(
     traced_model, shape_list, default_dtype="int8"
 )
 
-with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=65536.0):
+with relay.quantize.qconfig(
+    calibrate_mode="global_scale",
+    global_scale=340282366920938463463374607431768211456.0,  # 2^128
+):
     mod = relay.quantize.quantize(mod, params)
 
 print(mod)
