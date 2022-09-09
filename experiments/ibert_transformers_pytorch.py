@@ -1,9 +1,9 @@
 import torch
 import tvm
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers import AutoTokenizer, IBertForSequenceClassification
 
 tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
-model = AutoModelForMaskedLM.from_pretrained(
+model = IBertForSequenceClassification.from_pretrained(
     "kssteven/ibert-roberta-base", return_dict=False
 )
 
