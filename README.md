@@ -20,4 +20,4 @@ I've been working on a project, tachikoma, that seeks to extend TVM into a runti
 
 This will be a fully open-sourced and "wish I had more free time" project, so I will sporadically work on it and publish all progress here: https://github.com/zk-ml.
 
-Finally, thanks to the people I've consulted around this idea: @szgbo, @junrushao, @remco, @anihamde, @bhuan_, @lm_zheng, @LigengZhu, @YassineLanda, and @l_udens. Excited for things to come!
+Finally, thanks to the people I've consulted around this idea: @szgbo, @junrushao, @recmo, @anihamde, @bhuan_, @lm_zheng, @LigengZhu, @YassineLanda, and @l_udens. Excited for things to come!
