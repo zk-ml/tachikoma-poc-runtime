@@ -6,7 +6,7 @@ tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
 model = AutoModelForMaskedLM.from_pretrained("kssteven/ibert-roberta-base")
 
 text = "I'm sorry, Dave."
-inputs = tokenizer(text, return_tensors="pt")
+inputs = tokenizer(text, return_tensors="pt")["input_ids"]
 
 model.eval()
 for p in model.parameters():
