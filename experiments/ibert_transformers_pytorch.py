@@ -13,8 +13,7 @@ model.eval()
 for p in model.parameters():
     p.requires_grad_(False)
 
-res = model(inputs)
-print(inputs, res)
+torch_output = model(inputs)
 
 traced_model = torch.jit.trace(model, inputs)
 traced_model.eval()
@@ -31,10 +30,10 @@ mod, params = relay.frontend.pytorch.from_pytorch(
     traced_model, shape_list, default_dtype="int8"
 )
 
-print(mod)
-
 with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=65536.0):
     mod = relay.quantize.quantize(mod, params)
+
+print(mod)
 
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
@@ -53,4 +52,4 @@ m.run()
 # Get outputs
 tvm_output = m.get_output(0)
 
-print(tvm_output)
+print(tvm_output, torch_output)
