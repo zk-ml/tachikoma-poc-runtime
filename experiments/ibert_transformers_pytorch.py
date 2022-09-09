@@ -1,9 +1,10 @@
 import torch
 import tvm
-from transformers import AutoTokenizer, IBertForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForMaskedLM
+from tvm import relay
 
 tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
-model = IBertForSequenceClassification.from_pretrained(
+model = AutoModelForMaskedLM.from_pretrained(
     "kssteven/ibert-roberta-base", return_dict=False
 )
 
@@ -27,6 +28,6 @@ shape_list = [
     for i in list(traced_model.graph.inputs())[1:]
 ]
 
-mod_bert, params_bert = tvm.relay.frontend.pytorch.from_pytorch(
+mod_bert, params_bert = relay.frontend.pytorch.from_pytorch(
     traced_model, shape_list, default_dtype="float32"
 )
