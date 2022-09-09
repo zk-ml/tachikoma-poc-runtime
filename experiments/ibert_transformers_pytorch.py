@@ -41,11 +41,15 @@ with tvm.transform.PassContext(opt_level=0):
 
 from tvm.contrib import graph_executor
 
+input_name = "input_ids"
+
 dtype = "float32"
 m = graph_executor.GraphModule(lib["default"](dev))
 # Set inputs
-# m.set_input(input_name, tvm.nd.array(.astype(dtype)))
+m.set_input(input_name, tvm.nd.array(inputs.numpy().astype(dtype)))
 # Execute
-# m.run()
+m.run()
 # Get outputs
-# tvm_output = m.get_output(0)
+tvm_output = m.get_output(0)
+
+print(tvm_output)
