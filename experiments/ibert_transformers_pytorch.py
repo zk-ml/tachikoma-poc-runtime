@@ -12,7 +12,9 @@ model.eval()
 for p in model.parameters():
     p.requires_grad_(False)
 
-traced_model = torch.jit.trace(model, inputs)
+res = model(inputs)
+
+traced_model = torch.jit.trace(model, [inputs])
 traced_model.eval()
 for p in traced_model.parameters():
     p.requires_grad_(False)
