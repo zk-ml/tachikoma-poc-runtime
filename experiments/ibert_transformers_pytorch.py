@@ -14,7 +14,7 @@ model.eval()
 for p in model.parameters():
     p.requires_grad_(False)
 
-torch_output = model(inputs)
+torch_output = model(inputs).numpy()
 
 traced_model = torch.jit.trace(model, inputs)
 traced_model.eval()
@@ -53,4 +53,4 @@ m.run()
 # Get outputs
 tvm_output = m.get_output(0)
 
-print(tvm_output, torch_output)
+print((tvm_output - torch_output).abs())
