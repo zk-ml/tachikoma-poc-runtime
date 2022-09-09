@@ -3,12 +3,10 @@ import tvm
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from tvm import relay
 
-tokenizer = AutoTokenizer.from_pretrained("kssteven/ibert-roberta-base")
-model = AutoModelForMaskedLM.from_pretrained(
-    "kssteven/ibert-roberta-base", return_dict=False
-)
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model = AutoModelForMaskedLM.from_pretrained("bert-base-uncased", return_dict=False)
 
-text = "I'm sorry, Dave."
+text = "I'm sorry, Dave. [MASK]"
 inputs = tokenizer(text, return_tensors="pt")["input_ids"]
 
 model.eval()
@@ -34,6 +32,9 @@ mod, params = relay.frontend.pytorch.from_pytorch(
 )
 
 print(mod)
+
+with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=65536.0):
+    mod = relay.quantize.quantize(mod, params)
 
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
