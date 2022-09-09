@@ -14,7 +14,7 @@ model.eval()
 for p in model.parameters():
     p.requires_grad_(False)
 
-torch_output = model(inputs).numpy()
+torch_output = model(inputs)[0].numpy()
 
 traced_model = torch.jit.trace(model, inputs)
 traced_model.eval()
