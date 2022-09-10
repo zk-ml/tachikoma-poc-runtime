@@ -178,7 +178,7 @@ print(mod)  # comment in to see the QNN IR dump
 
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
-with tvm.transform.PassContext(opt_level=0):
+with tvm.transform.PassContext(opt_level=1):
     lib = relay.build(mod, target=target, params=params)
 
 from tvm.contrib import graph_executor
