@@ -32,7 +32,7 @@ import tvm.testing
 
 
 has_tachikoma_codegen = pytest.mark.skipif(
-    not tvm.get_global_func("relay.ext.tachikoma", True), reason="DNNL codegen not available"
+    not tvm.get_global_func("relay.ext.tachikoma", True), reason="Tachikoma codegen not available"
 )
 
 run_module = tvm.testing.parameter(
@@ -1516,7 +1516,7 @@ qnn_conv_profiles = tvm.testing.parameter(
     }
 )
 
-
+"""
 @has_tachikoma_codegen
 def test_qnn_conv2d(qnn_conv_profiles):
     def generate_model(p, c, q):
@@ -1609,7 +1609,7 @@ def test_qnn_conv2d(qnn_conv_profiles):
 
     # atol=1 means int values should match with +-1 quantum value tolerance
     check_result(mod, ref_mod, args, tol=1e-10, atol=1, desired_compiler="tachikoma")
-
+"""
 
 conv_profiles = tvm.testing.parameter(
     by_dict={
@@ -1692,7 +1692,7 @@ qnn_dense_profiles = tvm.testing.parameter(
     }
 )
 
-
+"""
 @has_tachikoma_codegen
 def test_qnn_dense(qnn_dense_profiles):
     def generate_model(p, c, q):
@@ -1755,7 +1755,7 @@ def test_qnn_dense(qnn_dense_profiles):
 
     # atol=1 means int values should match with +-1 quantum value tolerance
     check_result(mod, ref_mod, args, tol=1e-10, atol=1, desired_compiler="tachikoma")
-
+"""
 
 dense_profiles = tvm.testing.parameter(
     by_dict={
@@ -1764,7 +1764,7 @@ dense_profiles = tvm.testing.parameter(
     }
 )
 
-
+"""
 @has_tachikoma_codegen
 def test_dense_plus(dense_profiles):
     def generate_model(p, c):
@@ -1797,7 +1797,7 @@ def test_dense_plus(dense_profiles):
     ref_mod, args = generate_model(dense_p, arg_p)
     mod = partition_for_tachikoma(ref_mod)
     check_result(mod, ref_mod, args, tol=1e-5, desired_compiler="tachikoma")
-
+"""
 
 if __name__ == "__main__":
     tvm.testing.main()
