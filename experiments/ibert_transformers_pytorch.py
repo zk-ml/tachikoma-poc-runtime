@@ -24,7 +24,7 @@ for p in model.parameters():
 
 torch_output = model(inputs)[0].numpy()
 
-traced_model = torch.jit.trace(model, inputs)
+traced_model = torch.jit.script(model, inputs)
 traced_model.eval()
 
 for p in traced_model.parameters():
