@@ -108,8 +108,7 @@ from tvm.relay.op.contrib.register import register_pattern_table
 
 @register_pattern_table("tachikoma")
 def pattern_table():
-    conv2d_bias_relu_pat = ("dnnl.qnn.conv2d", make_qnn_conv2d_pattern())
-    dnnl_patterns = [conv2d_bias_relu_pat]
+    dnnl_patterns = [make_qnn_conv2d_pattern()]
     return dnnl_patterns
 
 
