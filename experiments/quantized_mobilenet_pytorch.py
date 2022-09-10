@@ -84,7 +84,7 @@ def quantize_model(model, inp):
     torch.quantization.convert(model, inplace=True)
 
 
-qmodel = qgooglenet.googlenet(pretrained=True, quantize=True).eval()
+qmodel = qgooglenet(pretrained=True, quantize=True).eval()
 
 pt_inp = torch.from_numpy(inp)
 # quantize_model(qmodel, pt_inp)
