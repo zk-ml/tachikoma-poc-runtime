@@ -98,7 +98,6 @@ input_shapes = [(input_name, (1, 3, 224, 224))]
 mod, params = relay.frontend.from_pytorch(
     script_module, input_shapes, keep_quantized_weight=True
 )
-print(mod)  # comment in to see the QNN IR dump
 
 # Tachikoma
 from tvm.relay.op.contrib.tachikoma import pattern_table
@@ -110,20 +109,19 @@ mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
 mod = relay.transform.MergeCompilerRegions()(mod)
 mod = relay.transform.PartitionGraph()(mod)
 
+print(mod)
+
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
 
 with tvm.transform.PassContext(opt_level=2):
-    lib = relay.build(mod, target=target, params=params)
+    graph, lib, params = relay.build(mod, target=target, params=params)
 
-from tvm.contrib import graph_executor
+rt_mod = tvm.contrib.graph_executor.create(graph, lib, dev)
+for name, data in params.items():
+    rt_mod.set_input(name, data)
+rt_mod.run()
 
-m = graph_executor.GraphModule(lib["default"](dev))
-# Set inputs
-m.set_input(input_name, inp)
-# Execute
-m.run()
-# Get outputs
-tvm_output = m.get_output(0).numpy()
+tvm_output = rt_mod.get_output(0).numpy()
 
 print(np.absolute(tvm_output - pt_result).mean())
