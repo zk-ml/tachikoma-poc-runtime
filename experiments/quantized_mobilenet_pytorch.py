@@ -11,6 +11,9 @@ from torchvision.models import quantization
 import tvm
 from tvm import relay
 from tvm.contrib.download import download_testdata
+from tvm.relay.testing.temp_op_attr import TempOpAttr
+from tvm.relay.op.contrib import tachikoma
+from tvm.relay import transform
 
 
 def get_transform():
@@ -102,28 +105,67 @@ mod, params = relay.frontend.from_pytorch(
 )
 
 # Tachikoma
-from tvm.relay.op.contrib.tachikoma import make_qnn_conv2d_pattern
-from tvm.relay.op.contrib.register import register_pattern_table
+with TempOpAttr("nn.conv2d", "FTVMLegalize", tachikoma.legalize_group_conv):
+    with TempOpAttr(
+        "nn.conv2d_transpose", "FTVMLegalize", tachikoma.legalize_group_conv
+    ):
+        seq = tvm.transform.Sequential(
+            [
+                transform.CanonicalizeOps(),
+                transform.InferType(),
+                transform.SimplifyInference(),
+                transform.FoldConstant(),
+                transform.FoldScaleAxis(),
+                # fold consecutive add ops to simplify pattern `conv2d-bias_add-bn-relu`
+                transform.SimplifyExpr(),
+                transform.FoldConstant(),
+                # alter group conv /conv_transpose layout to `GOIHW` / `GIOHW`
+                transform.Legalize(),
+                transform.FoldConstant(),
+            ]
+        )
+        with tvm.transform.PassContext(opt_level=3):
+            mod = seq(mod)
+alter_layout = True
+if alter_layout:
+    with TempOpAttr("nn.conv1d", "FTVMAlterOpLayout", tachikoma.alter_conv):
+        with TempOpAttr("nn.conv2d", "FTVMAlterOpLayout", tachikoma.alter_conv):
+            with TempOpAttr("nn.conv3d", "FTVMAlterOpLayout", tachikoma.alter_conv):
+                with TempOpAttr(
+                    "nn.conv2d_transpose",
+                    "FTVMAlterOpLayout",
+                    tachikoma.alter_conv_transpose,
+                ):
+                    with TempOpAttr(
+                        "nn.conv3d_transpose",
+                        "FTVMAlterOpLayout",
+                        tachikoma.alter_conv_transpose,
+                    ):
+                        alter_layout_seq = tvm.transform.Sequential(
+                            [
+                                transform.AlterOpLayout(),
+                                transform.FoldConstant(),
+                            ]
+                        )
+                        with tvm.transform.PassContext(opt_level=3):
+                            mod = alter_layout_seq(mod)
 
+mod = tachikoma.rewrite_layer_norm(mod)
+mod = tachikoma.rewrite_dense_bias_gelu_reshape_last(mod)
+mod = tachikoma.legalize_qnn_for_tachikoma(mod)
 
-@register_pattern_table("tachikoma")
-def pattern_table():
-    dnnl_patterns = [make_qnn_conv2d_pattern()]
-    return dnnl_patterns
-
-
-patterns = pattern_table()
-# print(patterns)
-mod = relay.transform.MergeComposite(patterns)(mod)
-mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
-mod = relay.transform.MergeCompilerRegions()(mod)
-mod = relay.transform.PartitionGraph()(mod)
-
-print(mod)
-
+byoc_seq = tvm.transform.Sequential(
+    [
+        transform.MergeComposite(tachikoma.pattern_table()),
+        transform.AnnotateTarget("tachikoma"),
+        transform.MergeCompilerRegions(),
+        transform.PartitionGraph(),
+    ]
+)
 target = tvm.target.Target("llvm", host="llvm")
 
 with tvm.transform.PassContext(opt_level=3):
+    mod = byoc_seq(mod)
     lib = relay.build(mod, target=target, params=params)
 
 from tvm.contrib import graph_executor
