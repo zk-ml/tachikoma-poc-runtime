@@ -968,7 +968,6 @@ def test_dense_pattern(run_module, dtype="float32"):
     dense_bias = tvm.IRModule.from_expr(dense_bias)
     config = dense_bias, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
-"""
 
 def test_pool2d(run_module, dtype="float32"):
     def get_graph(
@@ -1043,7 +1042,7 @@ def test_global_avg_pooling2d(run_module, dtype="float32"):
     config = out, {"x": x_shape}, []
     run_and_verify_func(config, run_module=run_module)
 
-"""
+
 def test_pool3d(run_module, dtype="float32"):
     def get_graph(
         op,
@@ -1082,10 +1081,10 @@ def test_pool3d(run_module, dtype="float32"):
         get_graph(relay.nn.max_pool3d, padding=(0, 0, 0, 1, 1, 1)), run_module=run_module
     )
     run_and_verify_func(get_graph(relay.nn.max_pool3d, strides=(1, 1, 1)), run_module=run_module)
-"""
+
 
 def test_prune_tachikoma_subgraph(run_module):
-    """In this test, OP "add" should be offloaded from tachikoma codegen."""
+    # In this test, OP "add" should be offloaded from tachikoma codegen.
 
     def get_graph():
         x1 = relay.var("x1", shape=(1, 32, 56, 56))
@@ -1115,7 +1114,7 @@ def test_prune_tachikoma_subgraph(run_module):
 
     run_and_verify_func(get_graph(), subgraph_num=1, run_module=run_module, test_bf16=False)
 
-"""
+
 def test_layer_norm(run_module, dtype="float32"):
     x_shape = (1, 49, 64)
 
