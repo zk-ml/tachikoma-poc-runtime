@@ -571,7 +571,7 @@ def get_bmm(
     param_lst = ["kernel"]
     return out, dic, param_lst
 
-
+"""
 def test_bmm(run_module, dtype="float32"):
     x_shape = (1, 2, 4)
     k_shape = (1, 3, 4)
@@ -724,7 +724,7 @@ def test_conv1d_pattern(run_module, dtype="float32"):
         conv1d_bias = tvm.IRModule.from_expr(conv1d_bias)
         config = conv1d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
-
+"""
 
 def test_conv2d(run_module, dtype="float32"):
     x_shape = (1, 32, 8, 8)
@@ -863,7 +863,7 @@ def test_conv2d_transpose_pattern(run_module, dtype="float32"):
         config = conv2d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-
+"""
 def test_conv3d(run_module, dtype="float32"):
     conv3d, dic, param_lst = get_conv3d(dtype=dtype)
     conv3d = tvm.IRModule.from_expr(conv3d)
@@ -968,7 +968,7 @@ def test_dense_pattern(run_module, dtype="float32"):
     dense_bias = tvm.IRModule.from_expr(dense_bias)
     config = dense_bias, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
-
+"""
 
 def test_pool2d(run_module, dtype="float32"):
     def get_graph(
@@ -1043,7 +1043,7 @@ def test_global_avg_pooling2d(run_module, dtype="float32"):
     config = out, {"x": x_shape}, []
     run_and_verify_func(config, run_module=run_module)
 
-
+"""
 def test_pool3d(run_module, dtype="float32"):
     def get_graph(
         op,
@@ -1082,7 +1082,7 @@ def test_pool3d(run_module, dtype="float32"):
         get_graph(relay.nn.max_pool3d, padding=(0, 0, 0, 1, 1, 1)), run_module=run_module
     )
     run_and_verify_func(get_graph(relay.nn.max_pool3d, strides=(1, 1, 1)), run_module=run_module)
-
+"""
 
 def test_prune_tachikoma_subgraph(run_module):
     """In this test, OP "add" should be offloaded from tachikoma codegen."""
@@ -1115,7 +1115,7 @@ def test_prune_tachikoma_subgraph(run_module):
 
     run_and_verify_func(get_graph(), subgraph_num=1, run_module=run_module, test_bf16=False)
 
-
+"""
 def test_layer_norm(run_module, dtype="float32"):
     x_shape = (1, 49, 64)
 
@@ -1147,7 +1147,7 @@ def test_rewrite_dense_bias_gelu_reshape_last(run_module, dtype="float32"):
     run_and_verify_func(
         get_graph(), subgraph_num=1, run_module=run_module, dtype=dtype, test_bf16=False
     )
-
+"""
 
 def test_resnetv1_rewrite(run_module, dtype="float32"):
     def get_graph():
