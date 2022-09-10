@@ -176,40 +176,19 @@ input_shapes = [(input_name, (1, 3, 224, 224))]
 mod, params = relay.frontend.from_pytorch(script_module, input_shapes)
 print(mod)  # comment in to see the QNN IR dump
 
-##############################################################################
-# Compile and run the Relay module
-# --------------------------------
-# Once we obtained the quantized Relay module, the rest of the workflow
-# is the same as running floating point models. Please refer to other
-# tutorials for more details.
-#
-# Under the hood, quantization specific operators are lowered to a sequence of
-# standard Relay operators before compilation.
-target = "llvm"
-tvm_result, rt_mod = run_tvm_model(mod, params, input_name, inp, target=target)
-
-##########################################################################
-# Compare the output labels
-# -------------------------
-# We should see identical labels printed.
-pt_top3_labels = np.argsort(pt_result[0])[::-1][:3]
-tvm_top3_labels = np.argsort(tvm_result[0])[::-1][:3]
-
-print("PyTorch top3 labels:", [synset[label] for label in pt_top3_labels])
-print("TVM top3 labels:", [synset[label] for label in tvm_top3_labels])
-
-###########################################################################################
-# However, due to the difference in numerics, in general the raw floating point
-# outputs are not expected to be identical. Here, we print how many floating point
-# output values are identical out of 1000 outputs from mobilenet v2.
-print(
-    "%d in 1000 raw floating outputs identical." % np.sum(tvm_result[0] == pt_result[0])
-)
-
-##########################################################################
-# Measure performance
-# -------------------------
-# Here we give an example of how to measure performance of TVM compiled models.
-n_repeat = 100  # should be bigger to make the measurement more accurate
+target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
-print(rt_mod.benchmark(dev, number=1, repeat=n_repeat))
+with tvm.transform.PassContext(opt_level=0):
+    lib = relay.build(mod, target=target, params=params)
+
+from tvm.contrib import graph_executor
+
+m = graph_executor.GraphModule(lib["default"](dev))
+# Set inputs
+m.set_input(input_name, inp)
+# Execute
+m.run()
+# Get outputs
+tvm_output = m.get_output(0).numpy()
+
+print(np.absolute(tvm_output - pt_result))
