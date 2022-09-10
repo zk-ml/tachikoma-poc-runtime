@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 
 import torch
-from torchvision.models.quantization import resnet as qresnet
+from torchvision.models.quantization import googlenet as qgooglenet
 
 import tvm
 from tvm import relay
@@ -84,10 +84,10 @@ def quantize_model(model, inp):
     torch.quantization.convert(model, inplace=True)
 
 
-qmodel = qresnet.resnet18(pretrained=True).eval()
+qmodel = qgooglenet.googlenet(pretrained=True, quantize=True).eval()
 
 pt_inp = torch.from_numpy(inp)
-quantize_model(qmodel, pt_inp)
+# quantize_model(qmodel, pt_inp)
 script_module = torch.jit.trace(qmodel, pt_inp).eval()
 
 with torch.no_grad():
