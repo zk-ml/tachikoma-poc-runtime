@@ -6,7 +6,7 @@ import numpy as np
 
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False).ibert
+model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False)
 
 text = "I'm sorry, Dave. [MASK]"
 inputs = tokenizer(text, return_tensors="pt")["input_ids"]
@@ -19,6 +19,7 @@ torch_output = model(inputs)[0].numpy()
 
 traced_model = torch.jit.trace(model, inputs)
 traced_model.eval()
+
 for p in traced_model.parameters():
     p.requires_grad_(False)
 
