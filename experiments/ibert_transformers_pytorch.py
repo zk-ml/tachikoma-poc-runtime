@@ -6,7 +6,7 @@ import numpy as np
 
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False)
+model = AutoModelForMaskedLM.from_pretrained(model_name, return_dict=False).ibert
 
 text = "I'm sorry, Dave. [MASK]"
 inputs = tokenizer(text, return_tensors="pt")["input_ids"]
