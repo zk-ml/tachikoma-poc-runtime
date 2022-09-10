@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 
 import torch
-from torchvision.models.quantization import mobilenet as qmobilenet
+from torchvision.models.quantization import resnet as qresnet
 
 import tvm
 from tvm import relay
@@ -84,7 +84,7 @@ def quantize_model(model, inp):
     torch.quantization.convert(model, inplace=True)
 
 
-qmodel = qmobilenet.mobilenet_v2(pretrained=True).eval()
+qmodel = qresnet.resnet18(pretrained=True).eval()
 
 pt_inp = torch.from_numpy(inp)
 quantize_model(qmodel, pt_inp)
