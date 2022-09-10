@@ -36,23 +36,23 @@ shape_list = [
 print(traced_model)
 print(shape_list)
 
-torch.onnx.export(
-    traced_model,  # model being run
-    inputs,  # model input (or a tuple for multiple inputs)
-    model_path,  # where to save the model (can be a file or file-like object)
-    export_params=True,
-    opset_version=11,  # the ONNX version to export the model to
-    do_constant_folding=False,  # whether to execute constant folding for optimization
-    input_names=["input_name"],  # the model's input names
-    output_names=["output"],  # the model's output names
-)
-
 if pytorch:
     mod, params = relay.frontend.pytorch.from_pytorch(
         traced_model, shape_list, default_dtype="int8"
     )
 
 else:
+    torch.onnx.export(
+        model,  # model being run
+        inputs,  # model input (or a tuple for multiple inputs)
+        model_path,  # where to save the model (can be a file or file-like object)
+        export_params=True,
+        opset_version=11,  # the ONNX version to export the model to
+        do_constant_folding=False,  # whether to execute constant folding for optimization
+        input_names=["input_name"],  # the model's input names
+        output_names=["output"],  # the model's output names
+    )
+
     onnx_model = onnx.load(model_path)
     mod, params = relay.frontend.from_onnx(onnx_model, shape_list)
 
