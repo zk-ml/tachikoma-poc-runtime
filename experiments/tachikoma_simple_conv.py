@@ -58,7 +58,7 @@ with tvm.transform.PassContext(opt_level=0):
 with open("graph.json", "w") as f:
     f.write(graph)
 
-print(lib, params)
+#print(lib, params)
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
@@ -68,4 +68,4 @@ rt_mod.run()
 
 out = rt_mod.get_output(0)
 
-print(out)
+#print(out)
