@@ -19,7 +19,7 @@ import onnx
 from tvm.contrib.download import download_testdata
 
 dtype = "int8"
-scale = 1
+scale = 100
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
 
