@@ -6,7 +6,7 @@ from tvm import relay
 import numpy as np
 import onnx
 
-pytorch = True
+pytorch = False
 
 input_name = "input_ids"
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
@@ -45,13 +45,13 @@ if pytorch:
 else:
     model_path = "ibert.onnx"
     torch.onnx.export(
-        model,  # model being run
+        traced_model,  # model being run
         inputs,  # model input (or a tuple for multiple inputs)
         model_path,  # where to save the model (can be a file or file-like object)
         export_params=True,
-        opset_version=11,  # the ONNX version to export the model to
+        opset_version=12,  # the ONNX version to export the model to
         do_constant_folding=False,  # whether to execute constant folding for optimization
-        input_names=["input_name"],  # the model's input names
+        input_names=[input_name],  # the model's input names
         output_names=["output"],  # the model's output names
     )
 
