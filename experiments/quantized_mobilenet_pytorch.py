@@ -1,41 +1,6 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-"""
-Deploy a Framework-prequantized Model with TVM
-==============================================
-**Author**: `Masahiro Masuda <https://github.com/masahi>`_
-
-This is a tutorial on loading models quantized by deep learning frameworks into TVM.
-Pre-quantized model import is one of the quantization support we have in TVM. More details on
-the quantization story in TVM can be found
-`here <https://discuss.tvm.apache.org/t/quantization-story/3920>`_.
-
-Here, we demonstrate how to load and run models quantized by PyTorch, MXNet, and TFLite.
-Once loaded, we can run compiled, quantized models on any hardware TVM supports.
-"""
-
-# sphinx_gallery_start_ignore
 from tvm import testing
 
 testing.utils.install_request_hook(depth=3)
-# sphinx_gallery_end_ignore
-
-#################################################################################
-# First, necessary imports
 from PIL import Image
 
 import numpy as np
@@ -48,8 +13,6 @@ from tvm import relay
 from tvm.contrib.download import download_testdata
 
 
-#################################################################################
-# Helper functions to run the demo
 def get_transform():
     import torchvision.transforms as transforms
 
@@ -107,28 +70,9 @@ def run_tvm_model(mod, params, input_name, inp, target="llvm"):
     return runtime.get_output(0).numpy(), runtime
 
 
-#################################################################################
-# A mapping from label to class name, to verify that the outputs from models below
-# are reasonable
 synset = get_synset()
 
-#################################################################################
-# Everyone's favorite cat image for demonstration
 inp = get_imagenet_input()
-
-################################################################################
-# Deploy a quantized PyTorch Model
-# --------------------------------
-# First, we demonstrate how to load deep learning models quantized by PyTorch,
-# using our PyTorch frontend.
-#
-# Please refer to the PyTorch static quantization tutorial below to learn about
-# their quantization workflow.
-# https://pytorch.org/tutorials/advanced/static_quantization_tutorial.html
-#
-# We use this function to quantize PyTorch models.
-# In short, this function takes a floating point model and converts it to uint8.
-# The model is per-channel quantized.
 
 
 def quantize_model(model, inp):
@@ -140,18 +84,8 @@ def quantize_model(model, inp):
     torch.quantization.convert(model, inplace=True)
 
 
-##############################################################################
-# Load quantization-ready, pretrained Mobilenet v2 model from torchvision
-# -----------------------------------------------------------------------
-# We choose mobilenet v2 because this model was trained with quantization aware
-# training. Other models require a full post training calibration.
 qmodel = qmobilenet.mobilenet_v2(pretrained=True).eval()
 
-##############################################################################
-# Quantize, trace and run the PyTorch Mobilenet v2 model
-# ------------------------------------------------------
-# The details are out of scope for this tutorial. Please refer to the tutorials
-# on the PyTorch website to learn about quantization and jit.
 pt_inp = torch.from_numpy(inp)
 quantize_model(qmodel, pt_inp)
 script_module = torch.jit.trace(qmodel, pt_inp).eval()
@@ -159,18 +93,6 @@ script_module = torch.jit.trace(qmodel, pt_inp).eval()
 with torch.no_grad():
     pt_result = script_module(pt_inp).numpy()
 
-##############################################################################
-# Convert quantized Mobilenet v2 to Relay-QNN using the PyTorch frontend
-# ----------------------------------------------------------------------
-# The PyTorch frontend has support for converting a quantized PyTorch model to
-# an equivalent Relay module enriched with quantization-aware operators.
-# We call this representation Relay QNN dialect.
-#
-# You can print the output from the frontend to see how quantized models are
-# represented.
-#
-# You would see operators specific to quantization such as
-# qnn.quantize, qnn.dequantize, qnn.requantize, and qnn.conv2d etc.
 input_name = "input"  # the input name can be be arbitrary for PyTorch frontend.
 input_shapes = [(input_name, (1, 3, 224, 224))]
 mod, params = relay.frontend.from_pytorch(
@@ -181,7 +103,7 @@ print(mod)  # comment in to see the QNN IR dump
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
 
-with tvm.transform.PassContext(opt_level=3):
+with tvm.transform.PassContext(opt_level=2):
     lib = relay.build(mod, target=target, params=params)
 
 from tvm.contrib import graph_executor
@@ -194,4 +116,4 @@ m.run()
 # Get outputs
 tvm_output = m.get_output(0).numpy()
 
-print(np.absolute(tvm_output - pt_result))
+print(np.absolute(tvm_output - pt_result).mean())
