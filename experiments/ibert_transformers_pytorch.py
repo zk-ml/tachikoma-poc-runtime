@@ -28,30 +28,32 @@ shape_list = [
 ]
 print(traced_model)
 print(shape_list)
-mod, params = relay.frontend.pytorch.from_pytorch(
-    traced_model, shape_list, default_dtype="int8"
-)
 
-# with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=127.0):
-#    mod = relay.quantize.quantize(mod, params)
+if False:
+    mod, params = relay.frontend.pytorch.from_pytorch(
+        traced_model, shape_list, default_dtype="int8"
+    )
 
-print(mod)
+    # with relay.quantize.qconfig(calibrate_mode="global_scale", global_scale=127.0):
+    #    mod = relay.quantize.quantize(mod, params)
 
-target = tvm.target.Target("llvm", host="llvm")
-dev = tvm.cpu(0)
-with tvm.transform.PassContext(opt_level=0):
-    lib = relay.build(mod, target=target, params=params)
+    print(mod)
 
-from tvm.contrib import graph_executor
+    target = tvm.target.Target("llvm", host="llvm")
+    dev = tvm.cpu(0)
+    with tvm.transform.PassContext(opt_level=0):
+        lib = relay.build(mod, target=target, params=params)
 
-input_name = "input_ids"
+    from tvm.contrib import graph_executor
 
-m = graph_executor.GraphModule(lib["default"](dev))
-# Set inputs
-m.set_input(input_name, tvm.nd.array(inputs.numpy()))
-# Execute
-m.run()
-# Get outputs
-tvm_output = m.get_output(0).numpy()
+    input_name = "input_ids"
 
-print(np.absolute(tvm_output - torch_output))
+    m = graph_executor.GraphModule(lib["default"](dev))
+    # Set inputs
+    m.set_input(input_name, tvm.nd.array(inputs.numpy()))
+    # Execute
+    m.run()
+    # Get outputs
+    tvm_output = m.get_output(0).numpy()
+
+    print(np.absolute(tvm_output - torch_output))
