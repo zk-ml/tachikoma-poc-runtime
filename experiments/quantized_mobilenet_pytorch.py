@@ -105,13 +105,13 @@ mod, params = relay.frontend.from_pytorch(
 from tvm.relay.op.contrib.tachikoma import pattern_table
 
 patterns = pattern_table()
+print(patterns)
+mod = relay.transform.MergeComposite(patterns)(mod)
+mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
+mod = relay.transform.MergeCompilerRegions()(mod)
+mod = relay.transform.PartitionGraph()(mod)
 
-# mod = relay.transform.MergeComposite(patterns)(mod)
-# mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
-# mod = relay.transform.MergeCompilerRegions()(mod)
-# mod = relay.transform.PartitionGraph()(mod)
-
-print(mod)
+# print(mod)
 
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
