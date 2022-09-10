@@ -103,17 +103,18 @@ print(mod)  # comment in to see the QNN IR dump
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
 
-with tvm.transform.PassContext(opt_level=2):
-    lib = relay.build(mod, target=target, params=params)
+if __name__ == "__main__":
+    with tvm.transform.PassContext(opt_level=2):
+        lib = relay.build(mod, target=target, params=params)
 
-from tvm.contrib import graph_executor
+    from tvm.contrib import graph_executor
 
-m = graph_executor.GraphModule(lib["default"](dev))
-# Set inputs
-m.set_input(input_name, inp)
-# Execute
-m.run()
-# Get outputs
-tvm_output = m.get_output(0).numpy()
+    m = graph_executor.GraphModule(lib["default"](dev))
+    # Set inputs
+    m.set_input(input_name, inp)
+    # Execute
+    m.run()
+    # Get outputs
+    tvm_output = m.get_output(0).numpy()
 
-print(np.absolute(tvm_output - pt_result).mean())
+    print(np.absolute(tvm_output - pt_result).mean())
