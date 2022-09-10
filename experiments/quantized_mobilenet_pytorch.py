@@ -93,6 +93,8 @@ script_module = torch.jit.trace(qmodel, pt_inp).eval()
 with torch.no_grad():
     pt_result = script_module(pt_inp).numpy()
 
+print(script_module)
+
 input_name = "input"  # the input name can be be arbitrary for PyTorch frontend.
 input_shapes = [(input_name, (1, 3, 224, 224))]
 mod, params = relay.frontend.from_pytorch(
