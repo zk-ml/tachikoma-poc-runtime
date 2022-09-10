@@ -173,13 +173,15 @@ with torch.no_grad():
 # qnn.quantize, qnn.dequantize, qnn.requantize, and qnn.conv2d etc.
 input_name = "input"  # the input name can be be arbitrary for PyTorch frontend.
 input_shapes = [(input_name, (1, 3, 224, 224))]
-mod, params = relay.frontend.from_pytorch(script_module, input_shapes)
+mod, params = relay.frontend.from_pytorch(
+    script_module, input_shapes, keep_quantized_weight=True
+)
 print(mod)  # comment in to see the QNN IR dump
 
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
-mod = relay.qnn.transform.CanonicalizeOps()(mod)
-with tvm.transform.PassContext(opt_level=2):
+
+with tvm.transform.PassContext(opt_level=3):
     lib = relay.build(mod, target=target, params=params)
 
 from tvm.contrib import graph_executor
