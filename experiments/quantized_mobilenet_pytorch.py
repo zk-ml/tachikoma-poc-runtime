@@ -114,16 +114,15 @@ mod = relay.transform.PartitionGraph()(mod)
 print(mod)
 
 target = tvm.target.Target("llvm", host="llvm")
-dev = tvm.cpu(0)
 
-with tvm.transform.PassContext(opt_level=2):
-    graph, lib, params = relay.build(mod, target=target, params=params)
+with tvm.transform.PassContext(opt_level=3):
+    lib = relay.build(mod, target=target, params=params)
 
-rt_mod = tvm.contrib.graph_executor.create(graph, lib, dev)
-for name, data in params.items():
-    rt_mod.set_input(name, data)
+from tvm.contrib import graph_executor
+
+rt_mod = graph_executor.GraphModule(lib["default"](tvm.cpu(0)))
+rt_mod.set_input("input", inp)
 rt_mod.run()
+tvm_result = rt_mod.get_output(0).numpy()
 
-tvm_output = rt_mod.get_output(0).numpy()
-
-print(np.absolute(tvm_output - pt_result).mean())
+print(np.absolute(tvm_result - pt_result).mean())
