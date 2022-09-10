@@ -87,7 +87,7 @@ def quantize_model(model, inp):
     torch.quantization.convert(model, inplace=True)
 
 
-qmodel = quantization.googlenet(pretrained=True, quantize=True).eval()
+qmodel = quantization.resnet18(pretrained=True, quantize=True).eval()
 
 pt_inp = torch.from_numpy(inp)
 # quantize_model(qmodel, pt_inp)
@@ -105,6 +105,7 @@ mod, params = relay.frontend.from_pytorch(
 )
 
 # Tachikoma
+"""
 with TempOpAttr("nn.conv2d", "FTVMLegalize", tachikoma.legalize_group_conv):
     with TempOpAttr(
         "nn.conv2d_transpose", "FTVMLegalize", tachikoma.legalize_group_conv
@@ -126,9 +127,9 @@ with TempOpAttr("nn.conv2d", "FTVMLegalize", tachikoma.legalize_group_conv):
         )
         with tvm.transform.PassContext(opt_level=3):
             mod = seq(mod)
-
-mod = tachikoma.rewrite_layer_norm(mod)
-mod = tachikoma.rewrite_dense_bias_gelu_reshape_last(mod)
+"""
+# mod = tachikoma.rewrite_layer_norm(mod)
+# mod = tachikoma.rewrite_dense_bias_gelu_reshape_last(mod)
 mod = tachikoma.legalize_qnn_for_tachikoma(mod)
 
 byoc_seq = tvm.transform.Sequential(
