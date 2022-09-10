@@ -6,8 +6,7 @@ from tvm import relay
 import numpy as np
 import onnx
 
-model_path = "ibert.onnx"
-pytorch = False
+pytorch = True
 
 input_name = "input_ids"
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
@@ -38,10 +37,11 @@ print(shape_list)
 
 if pytorch:
     mod, params = relay.frontend.pytorch.from_pytorch(
-        traced_model, shape_list, default_dtype="int8"
+        traced_model, shape_list, keep_quantized_weight=True
     )
 
 else:
+    model_path = "ibert.onnx"
     torch.onnx.export(
         model,  # model being run
         inputs,  # model input (or a tuple for multiple inputs)
