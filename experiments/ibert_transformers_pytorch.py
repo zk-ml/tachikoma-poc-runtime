@@ -6,7 +6,7 @@ from tvm import relay
 import numpy as np
 import onnx
 
-pytorch = False
+pytorch = True
 
 input_name = "input_ids"
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
