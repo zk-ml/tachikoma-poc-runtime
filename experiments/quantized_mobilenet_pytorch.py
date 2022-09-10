@@ -126,29 +126,6 @@ with TempOpAttr("nn.conv2d", "FTVMLegalize", tachikoma.legalize_group_conv):
         )
         with tvm.transform.PassContext(opt_level=3):
             mod = seq(mod)
-alter_layout = True
-if alter_layout:
-    with TempOpAttr("nn.conv1d", "FTVMAlterOpLayout", tachikoma.alter_conv):
-        with TempOpAttr("nn.conv2d", "FTVMAlterOpLayout", tachikoma.alter_conv):
-            with TempOpAttr("nn.conv3d", "FTVMAlterOpLayout", tachikoma.alter_conv):
-                with TempOpAttr(
-                    "nn.conv2d_transpose",
-                    "FTVMAlterOpLayout",
-                    tachikoma.alter_conv_transpose,
-                ):
-                    with TempOpAttr(
-                        "nn.conv3d_transpose",
-                        "FTVMAlterOpLayout",
-                        tachikoma.alter_conv_transpose,
-                    ):
-                        alter_layout_seq = tvm.transform.Sequential(
-                            [
-                                transform.AlterOpLayout(),
-                                transform.FoldConstant(),
-                            ]
-                        )
-                        with tvm.transform.PassContext(opt_level=3):
-                            mod = alter_layout_seq(mod)
 
 mod = tachikoma.rewrite_layer_norm(mod)
 mod = tachikoma.rewrite_dense_bias_gelu_reshape_last(mod)
