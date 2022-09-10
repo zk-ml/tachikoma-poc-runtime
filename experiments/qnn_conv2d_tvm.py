@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+import pytest
 import itertools
 import numpy as np
 import sys
@@ -13,6 +30,16 @@ from tvm.relay.testing.temp_op_attr import TempOpAttr
 from tvm.relay.op.contrib import tachikoma
 import tvm.testing
 
+
+has_tachikoma_codegen = pytest.mark.skipif(
+    not tvm.get_global_func("relay.ext.tachikoma", True), reason="DNNL codegen not available"
+)
+
+run_module = tvm.testing.parameter(
+    pytest.param(False, marks=[has_tachikoma_codegen, *tvm.testing.requires_llvm.marks()]),
+    pytest.param(True, marks=[has_tachikoma_codegen, *tvm.testing.requires_llvm.marks()]),
+    ids=["compile", "run"],
+)
 
 _bf16_supported = None
 
@@ -32,7 +59,8 @@ def bf16_supported():
 
 
 def partition_for_tachikoma(mod, params=None, alter_layout=True, prune_subgraphs=True):
-    """Partition the graph greedily offloading supported operators to tachikoma.
+    """Partition the graph greedily offloading supported operators to DNNL.
+
     Parameters
     ----------
     mod : Module
@@ -48,9 +76,7 @@ def partition_for_tachikoma(mod, params=None, alter_layout=True, prune_subgraphs
         mod["main"] = bind_params_by_name(mod["main"], params)
 
     with TempOpAttr("nn.conv2d", "FTVMLegalize", tachikoma.legalize_group_conv):
-        with TempOpAttr(
-            "nn.conv2d_transpose", "FTVMLegalize", tachikoma.legalize_group_conv
-        ):
+        with TempOpAttr("nn.conv2d_transpose", "FTVMLegalize", tachikoma.legalize_group_conv):
             seq = tvm.transform.Sequential(
                 [
                     transform.CanonicalizeOps(),
@@ -73,14 +99,10 @@ def partition_for_tachikoma(mod, params=None, alter_layout=True, prune_subgraphs
             with TempOpAttr("nn.conv2d", "FTVMAlterOpLayout", tachikoma.alter_conv):
                 with TempOpAttr("nn.conv3d", "FTVMAlterOpLayout", tachikoma.alter_conv):
                     with TempOpAttr(
-                        "nn.conv2d_transpose",
-                        "FTVMAlterOpLayout",
-                        tachikoma.alter_conv_transpose,
+                        "nn.conv2d_transpose", "FTVMAlterOpLayout", tachikoma.alter_conv_transpose
                     ):
                         with TempOpAttr(
-                            "nn.conv3d_transpose",
-                            "FTVMAlterOpLayout",
-                            tachikoma.alter_conv_transpose,
+                            "nn.conv3d_transpose", "FTVMAlterOpLayout", tachikoma.alter_conv_transpose
                         ):
                             alter_layout_seq = tvm.transform.Sequential(
                                 [
@@ -135,18 +157,14 @@ def assert_result_dict_holds(result_dict):
 
 
 def check_tachikoma_used(mod, subgraph_num=None):
-    num_tachikoma_subgraphs = sum(
-        [1 if "tachikoma" in gv.name_hint else 0 for gv in mod.get_global_vars()]
-    )
+    num_tachikoma_subgraphs = sum([1 if "tachikoma" in gv.name_hint else 0 for gv in mod.get_global_vars()])
     if subgraph_num:
         assert num_tachikoma_subgraphs == subgraph_num
     else:
         assert num_tachikoma_subgraphs >= 1
 
 
-def run_and_verify(
-    mod, input, params, target, run_module, subgraph_num=None, test_bf16=True
-):
+def run_and_verify(mod, input, params, target, run_module, subgraph_num=None, test_bf16=True):
     dev = tvm.cpu()
     result_dict = dict()
     for mode in ["graph", "vm"]:
@@ -167,16 +185,12 @@ def run_and_verify(
             )
             processed_mod = mod
             if use_bf16:
-                processed_mod = relay.transform.ToMixedPrecision("bfloat16")(
-                    processed_mod
-                )
+                processed_mod = relay.transform.ToMixedPrecision("bfloat16")(processed_mod)
                 if tvm.ir.structural_equal(processed_mod, mod):
                     print("can not convert to bfloat16, skipping...")
                     continue
             if use_tachikoma:
-                processed_mod = partition_for_tachikoma(
-                    processed_mod, params, alter_layout
-                )
+                processed_mod = partition_for_tachikoma(processed_mod, params, alter_layout)
                 check_tachikoma_used(processed_mod)
             with tvm.transform.PassContext(opt_level=3):
                 func = relay.create_executor(
@@ -193,14 +207,9 @@ def run_and_verify(
 
 
 def run_and_verify_func(
-    config,
-    run_module,
-    subgraph_num=None,
-    target="llvm",
-    dtype="float32",
-    test_bf16=True,
+    config, run_module, subgraph_num=None, target="llvm", dtype="float32", test_bf16=True
 ):
-    """Test a Relay func by compiling, running, and comparing TVM and tachikoma outputs.
+    """Test a Relay func by compiling, running, and comparing TVM and DNNL outputs.
     Parameters
     ----------
     config : Tuple[relay.Function, Dict[str, NDArray], List[str]]
@@ -210,9 +219,7 @@ def run_and_verify_func(
         If True, the built module will be run after being compiled.
     """
     f, input_shapes, is_param = config
-    params = {
-        x: np.random.uniform(-1, 1, input_shapes[x]).astype(dtype) for x in is_param
-    }
+    params = {x: np.random.uniform(-1, 1, input_shapes[x]).astype(dtype) for x in is_param}
     input_dict = {
         k: np.random.uniform(-1, 1, v).astype(dtype)
         for k, v in input_shapes.items()
@@ -284,9 +291,7 @@ def get_conv1d(
     return add_activation(activation, out, dic, param_lst)
 
 
-def get_conv1d_bias(
-    x_shape=(1, 3, 224), k_shape=(10, 3, 3), activation=None, dtype="float32"
-):
+def get_conv1d_bias(x_shape=(1, 3, 224), k_shape=(10, 3, 3), activation=None, dtype="float32"):
     conv, dic, param_lst = get_conv1d(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
     bias = relay.var("bias", shape=(k_shape[0],), dtype=dtype)
     out = relay.nn.bias_add(conv, bias)
@@ -396,9 +401,7 @@ def get_conv2d_weights_const(
 def get_conv2d_bias(
     x_shape=(1, 32, 8, 8), k_shape=(16, 32, 3, 3), activation=None, dtype="float32"
 ):
-    conv, dic, param_lst = get_conv2d_weights_const(
-        x_shape=x_shape, k_shape=k_shape, dtype=dtype
-    )
+    conv, dic, param_lst = get_conv2d_weights_const(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
     bias = relay.var("bias", shape=(k_shape[0],), dtype=dtype)
     out = relay.nn.bias_add(conv, bias)
     dic["bias"] = (k_shape[0],)
@@ -409,9 +412,7 @@ def get_conv2d_bias(
 def get_conv2d_transpose_bias(
     x_shape=(1, 32, 8, 8), k_shape=(32, 16, 3, 3), activation=None, dtype="float32"
 ):
-    conv, dic, param_lst = get_conv2d_transpose(
-        x_shape=x_shape, k_shape=k_shape, dtype=dtype
-    )
+    conv, dic, param_lst = get_conv2d_transpose(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
     bias = relay.var("bias", shape=(k_shape[1],), dtype=dtype)
     out = relay.nn.bias_add(conv, bias)
     dic["bias"] = (k_shape[1],)
@@ -419,9 +420,7 @@ def get_conv2d_transpose_bias(
     return add_activation(activation, out, dic, param_lst)
 
 
-def get_conv2d_bias_bn_relu(
-    x_shape=(1, 32, 8, 8), k_shape=(16, 32, 3, 3), dtype="float32"
-):
+def get_conv2d_bias_bn_relu(x_shape=(1, 32, 8, 8), k_shape=(16, 32, 3, 3), dtype="float32"):
     conv2d_bias, dic, param_lst = get_conv2d_bias(x_shape, k_shape, dtype=dtype)
     beta = relay.const(np.zeros(k_shape[0]).astype(dtype))
     gamma = relay.const(np.ones(k_shape[0]).astype(dtype))
@@ -510,10 +509,7 @@ def get_conv3d_transpose(
 
 
 def get_conv3d_bias(
-    x_shape=(1, 32, 8, 8, 8),
-    k_shape=(16, 32, 3, 3, 3),
-    activation=None,
-    dtype="float32",
+    x_shape=(1, 32, 8, 8, 8), k_shape=(16, 32, 3, 3, 3), activation=None, dtype="float32"
 ):
     conv, dic, param_lst = get_conv3d(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
     bias = relay.var("bias", shape=(k_shape[0],), dtype=dtype)
@@ -524,14 +520,9 @@ def get_conv3d_bias(
 
 
 def get_conv3d_transpose_bias(
-    x_shape=(1, 32, 8, 8, 8),
-    k_shape=(32, 16, 3, 3, 3),
-    activation=None,
-    dtype="float32",
+    x_shape=(1, 32, 8, 8, 8), k_shape=(32, 16, 3, 3, 3), activation=None, dtype="float32"
 ):
-    conv, dic, param_lst = get_conv3d_transpose(
-        x_shape=x_shape, k_shape=k_shape, dtype=dtype
-    )
+    conv, dic, param_lst = get_conv3d_transpose(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
     bias = relay.var("bias", shape=(k_shape[1],), dtype=dtype)
     out = relay.nn.bias_add(conv, bias)
     dic["bias"] = (k_shape[1],)
@@ -552,11 +543,7 @@ def gelu_helper(data):
 
 
 def get_dense(
-    x_shape=(1, 16),
-    k_shape=(32, 16),
-    activation=None,
-    has_reshape=False,
-    dtype="float32",
+    x_shape=(1, 16), k_shape=(32, 16), activation=None, has_reshape=False, dtype="float32"
 ):
     x = relay.var("x", shape=(x_shape), dtype=dtype)
     kernel = relay.var("kernel", shape=(k_shape), dtype=dtype)
@@ -573,11 +560,7 @@ def get_dense(
 
 
 def get_bmm(
-    x_shape=(1, 16, 8),
-    k_shape=(1, 4, 8),
-    dtype="float32",
-    transpose_a=False,
-    transpose_b=True,
+    x_shape=(1, 16, 8), k_shape=(1, 4, 8), dtype="float32", transpose_a=False, transpose_b=True
 ):
     x = relay.var("x", shape=(x_shape), dtype=dtype)
     kernel = relay.var("kernel", shape=(k_shape), dtype=dtype)
@@ -643,9 +626,7 @@ def test_tachikoma_not_compatible(run_module, target="llvm", dtype="float32"):
     mod = partition_for_tachikoma(mod)
     for mode in ["graph", "vm"]:
         with tvm.transform.PassContext(opt_level=3):
-            func = relay.create_executor(
-                mode, mod=mod, device=tvm.cpu(0), target=target
-            ).evaluate()
+            func = relay.create_executor(mode, mod=mod, device=tvm.cpu(0), target=target).evaluate()
             if run_module:
                 results = func(x_data)
 
@@ -739,9 +720,7 @@ def test_conv1d_pattern(run_module, dtype="float32"):
         config = conv1d, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-        conv1d_bias, dic, param_lst = get_conv1d_bias(
-            x_shape, k_shape, activation=a, dtype=dtype
-        )
+        conv1d_bias, dic, param_lst = get_conv1d_bias(x_shape, k_shape, activation=a, dtype=dtype)
         conv1d_bias = tvm.IRModule.from_expr(conv1d_bias)
         config = conv1d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -749,11 +728,7 @@ def test_conv1d_pattern(run_module, dtype="float32"):
 
 def test_conv2d(run_module, dtype="float32"):
     x_shape = (1, 32, 8, 8)
-    for k_shape, groups in [
-        ((16, 32, 3, 3), 1),
-        ((32, 1, 3, 3), 32),
-        ((32, 2, 3, 3), 16),
-    ]:
+    for k_shape, groups in [((16, 32, 3, 3), 1), ((32, 1, 3, 3), 32), ((32, 2, 3, 3), 16)]:
         for padding in [(0, 0), (1, 1)]:
             for strides in [(1, 1), (2, 2)]:
                 for dilation in [(1, 1), (2, 2)]:
@@ -797,23 +772,17 @@ def test_conv2d_pattern(run_module, dtype="float32"):
         config = conv2d, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-        conv2d_bias, dic, param_lst = get_conv2d_bias(
-            x_shape, k_shape, activation=a, dtype=dtype
-        )
+        conv2d_bias, dic, param_lst = get_conv2d_bias(x_shape, k_shape, activation=a, dtype=dtype)
         conv2d_bias = tvm.IRModule.from_expr(conv2d_bias)
         config = conv2d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-    conv2d_bias_bn_relu, dic, param_lst = get_conv2d_bias_bn_relu(
-        x_shape, k_shape, dtype=dtype
-    )
+    conv2d_bias_bn_relu, dic, param_lst = get_conv2d_bias_bn_relu(x_shape, k_shape, dtype=dtype)
     conv2d_bias_bn_relu = tvm.IRModule.from_expr(conv2d_bias_bn_relu)
     config = conv2d_bias_bn_relu, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-    conv2d_bias_bn_relu, dic, param_lst = get_conv2d_bias_bn_relu(
-        x_shape, k_shape, dtype=dtype
-    )
+    conv2d_bias_bn_relu, dic, param_lst = get_conv2d_bias_bn_relu(x_shape, k_shape, dtype=dtype)
     conv2d_bias_bn_relu = tvm.IRModule.from_expr(conv2d_bias_bn_relu)
     config = conv2d_bias_bn_relu, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -824,9 +793,7 @@ def test_conv2d_bias_sum_relu(run_module, dtype="float32"):
     k_shape = (16, 32, 3, 3)
 
     def get_conv2d_bn_sum_relu(x_shape, k_shape, dtype="float32"):
-        out, dic, param_lst = get_conv2d_bias(
-            x_shape=x_shape, k_shape=k_shape, dtype=dtype
-        )
+        out, dic, param_lst = get_conv2d_bias(x_shape=x_shape, k_shape=k_shape, dtype=dtype)
         beta = relay.const(np.zeros(k_shape[0]).astype(dtype))
         gamma = relay.const(np.ones(k_shape[0]).astype(dtype))
         moving_mean = relay.const(np.zeros(k_shape[0]).astype(dtype))
@@ -859,9 +826,7 @@ def test_conv2d_bias_sum_relu(run_module, dtype="float32"):
         dic["sum_in"] = x_shape
         return relay.nn.relu(out), dic, param_lst
 
-    conv2d_bn_sum_relu, dic, param_lst = get_conv2d_bn_sum_relu(
-        x_shape, k_shape, dtype=dtype
-    )
+    conv2d_bn_sum_relu, dic, param_lst = get_conv2d_bn_sum_relu(x_shape, k_shape, dtype=dtype)
     conv2d_bn_sum_relu = tvm.IRModule.from_expr(conv2d_bn_sum_relu)
     config = conv2d_bn_sum_relu, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -869,11 +834,7 @@ def test_conv2d_bias_sum_relu(run_module, dtype="float32"):
 
 def test_conv2d_transpose(run_module, dtype="float32"):
     x_shape = (1, 32, 8, 8)
-    for k_shape, groups in [
-        ((32, 16, 3, 3), 1),
-        ((32, 1, 3, 3), 32),
-        ((32, 4, 3, 3), 16),
-    ]:
+    for k_shape, groups in [((32, 16, 3, 3), 1), ((32, 1, 3, 3), 32), ((32, 4, 3, 3), 16)]:
         for padding in [(0, 0), (1, 1)]:
             for strides in [(1, 1), (2, 2)]:
                 conv2d_transpose, dic, param_lst = get_conv2d_transpose(
@@ -897,9 +858,7 @@ def test_conv2d_transpose_pattern(run_module, dtype="float32"):
         config = conv2d, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-        conv2d_bias, dic, param_lst = get_conv2d_transpose_bias(
-            activation=a, dtype=dtype
-        )
+        conv2d_bias, dic, param_lst = get_conv2d_transpose_bias(activation=a, dtype=dtype)
         conv2d_bias = tvm.IRModule.from_expr(conv2d_bias)
         config = conv2d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -944,9 +903,7 @@ def test_conv3d_transpose(run_module, dtype="float32"):
     config = conv3d_transpose, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-    conv3d_transpose, dic, param_lst = get_conv3d_transpose(
-        strides=(2, 2, 2), dtype=dtype
-    )
+    conv3d_transpose, dic, param_lst = get_conv3d_transpose(strides=(2, 2, 2), dtype=dtype)
     conv3d_transpose = tvm.IRModule.from_expr(conv3d_transpose)
     config = conv3d_transpose, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -967,9 +924,7 @@ def test_conv3d_transpose_pattern(run_module, dtype="float32"):
         config = conv3d, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-        conv3d_bias, dic, param_lst = get_conv3d_transpose_bias(
-            activation=a, dtype=dtype
-        )
+        conv3d_bias, dic, param_lst = get_conv3d_transpose_bias(activation=a, dtype=dtype)
         conv3d_bias = tvm.IRModule.from_expr(conv3d_bias)
         config = conv3d_bias, dic, param_lst
         run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -1009,9 +964,7 @@ def test_dense_pattern(run_module, dtype="float32"):
     config = dense_bias, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
 
-    dense_bias, dic, param_lst = get_dense_bias(
-        x_shape, k_shape, activation="gelu", dtype=dtype
-    )
+    dense_bias, dic, param_lst = get_dense_bias(x_shape, k_shape, activation="gelu", dtype=dtype)
     dense_bias = tvm.IRModule.from_expr(dense_bias)
     config = dense_bias, dic, param_lst
     run_and_verify_func(config, run_module=run_module, dtype=dtype)
@@ -1057,9 +1010,7 @@ def test_pool2d(run_module, dtype="float32"):
                         continue
                     for count_include_pad in [False, True]:
                         # Skip "inclusive-counted blended or average pooling is not supported in combination with asymmetric padding"
-                        if count_include_pad and (
-                            padding == (0, 0, 1, 1) or strides == (2, 2)
-                        ):
+                        if count_include_pad and (padding == (0, 0, 1, 1) or strides == (2, 2)):
                             continue
                         run_and_verify_func(
                             get_graph(
@@ -1128,12 +1079,9 @@ def test_pool3d(run_module, dtype="float32"):
     run_and_verify_func(get_graph(relay.nn.avg_pool3d), run_module=run_module)
     run_and_verify_func(get_graph(relay.nn.max_pool3d), run_module=run_module)
     run_and_verify_func(
-        get_graph(relay.nn.max_pool3d, padding=(0, 0, 0, 1, 1, 1)),
-        run_module=run_module,
+        get_graph(relay.nn.max_pool3d, padding=(0, 0, 0, 1, 1, 1)), run_module=run_module
     )
-    run_and_verify_func(
-        get_graph(relay.nn.max_pool3d, strides=(1, 1, 1)), run_module=run_module
-    )
+    run_and_verify_func(get_graph(relay.nn.max_pool3d, strides=(1, 1, 1)), run_module=run_module)
 
 
 def test_prune_tachikoma_subgraph(run_module):
@@ -1165,9 +1113,7 @@ def test_prune_tachikoma_subgraph(run_module):
         out = tvm.IRModule.from_expr(y)
         return out, dic, param_lst
 
-    run_and_verify_func(
-        get_graph(), subgraph_num=1, run_module=run_module, test_bf16=False
-    )
+    run_and_verify_func(get_graph(), subgraph_num=1, run_module=run_module, test_bf16=False)
 
 
 def test_layer_norm(run_module, dtype="float32"):
@@ -1185,12 +1131,7 @@ def test_rewrite_dense_bias_gelu_reshape_last(run_module, dtype="float32"):
         k_shape = (32, 16)
 
         dense_bias, dic, param_lst = get_dense_bias(
-            x_shape,
-            k_shape,
-            activation=act,
-            has_reshape=True,
-            use_add=True,
-            dtype=dtype,
+            x_shape, k_shape, activation=act, has_reshape=True, use_add=True, dtype=dtype
         )
         dense_bias = tvm.IRModule.from_expr(dense_bias)
         processed_dense_bias = partition_for_tachikoma(
@@ -1201,11 +1142,7 @@ def test_rewrite_dense_bias_gelu_reshape_last(run_module, dtype="float32"):
         return dense_bias, dic, param_lst
 
     run_and_verify_func(
-        get_graph("gelu"),
-        subgraph_num=1,
-        run_module=run_module,
-        dtype=dtype,
-        test_bf16=False,
+        get_graph("gelu"), subgraph_num=1, run_module=run_module, dtype=dtype, test_bf16=False
     )
     run_and_verify_func(
         get_graph(), subgraph_num=1, run_module=run_module, dtype=dtype, test_bf16=False
@@ -1225,12 +1162,8 @@ def test_resnetv1_rewrite(run_module, dtype="float32"):
             (512, 256, 1, 1),
         ]
         x = relay.var("x", shape=data_shape, dtype=dtype)
-        wights = [
-            relay.const(np.random.randint(0, 1, w).astype(dtype)) for w in w_shapes
-        ]
-        biases = [
-            relay.const(np.random.randint(0, 1, w[0]).astype(dtype)) for w in w_shapes
-        ]
+        wights = [relay.const(np.random.randint(0, 1, w).astype(dtype)) for w in w_shapes]
+        biases = [relay.const(np.random.randint(0, 1, w[0]).astype(dtype)) for w in w_shapes]
 
         conv1 = relay.nn.conv2d(
             x,
@@ -1389,9 +1322,7 @@ class QnnBuilder:
         else:
             low = mean_val * (1 - dispersion)
             high = mean_val * (1 + dispersion)
-            return self.arg(
-                shape=[num_ch], dtype="float32", filler=filler_uni(low, high)
-            )
+            return self.arg(shape=[num_ch], dtype="float32", filler=filler_uni(low, high))
 
     def make_zp_and_scl(self, name, num_ch=1, dispersion=0.2):
         is_per_channel = getattr(self._qp, f"{name}_pc")
@@ -1418,10 +1349,7 @@ def check_fully_annotated(mod, desired_compiler):
             op = node.op
             if isinstance(op, relay.GlobalVar):
                 func = mod[op]
-                if (
-                    "Compiler" in func.attrs
-                    and func.attrs["Compiler"] == desired_compiler
-                ):
+                if "Compiler" in func.attrs and func.attrs["Compiler"] == desired_compiler:
                     matched_ops.append(op)
                     return
             else:
@@ -1429,9 +1357,7 @@ def check_fully_annotated(mod, desired_compiler):
 
     tvm.relay.analysis.post_order_visit(mod["main"].body, _visit)
 
-    assert (
-        len(other_ops) == 0 and len(matched_ops) != 0
-    ), "Model is not fully tachikoma compiled"
+    assert len(other_ops) == 0 and len(matched_ops) != 0, "Model is not fully DNNL compiled"
 
 
 def check_result(
@@ -1525,9 +1451,7 @@ base_conv_dw_no_pad = base_conv_no_pad._replace(SHAPE=[1, 16, 5, 5], GR=16)
 DenseProfile = collections.namedtuple("DenseProfile", ["N", "IC", "OC"])
 base_dense_profile = DenseProfile(N=2, IC=10, OC=16)
 
-ArgConstConfig = collections.namedtuple(
-    "ArgConstConfig", ["Data", "Weights", "Bias", "Sum"]
-)
+ArgConstConfig = collections.namedtuple("ArgConstConfig", ["Data", "Weights", "Bias", "Sum"])
 acp_regular = ArgConstConfig(Data=False, Weights=True, Bias=True, Sum=None)
 acp_no_bias = ArgConstConfig(Data=False, Weights=True, Bias=None, Sum=None)
 acp_with_sum = ArgConstConfig(Data=False, Weights=True, Bias=True, Sum=False)
@@ -1585,11 +1509,7 @@ qnn_conv_profiles = tvm.testing.parameter(
         "DW": (base_conv_dw_no_pad, acp_regular, qp_asymmetric_data),
         "NoBias": (base_conv, acp_no_bias, qp_regular),
         "AsymmetricInput": (base_conv_no_pad, acp_regular, qp_asymmetric_data),
-        "AsymmetricInput_NHWC": (
-            base_conv_no_pad_nhwc,
-            acp_regular,
-            qp_asymmetric_data,
-        ),
+        "AsymmetricInput_NHWC": (base_conv_no_pad_nhwc, acp_regular, qp_asymmetric_data),
         #  Pattern Conv2d + Requantize + Sum
         "WithSum": (base_conv_no_pad, acp_with_sum, qp_asymmetric_data),
         "WithSum_NHWC": (base_conv_no_pad_nhwc, acp_with_sum, qp_asymmetric_data),
@@ -1598,6 +1518,7 @@ qnn_conv_profiles = tvm.testing.parameter(
 )
 
 
+@has_tachikoma_codegen
 def test_qnn_conv2d(qnn_conv_profiles):
     def generate_model(p, c, q):
         np.random.seed(0)
@@ -1626,15 +1547,11 @@ def test_qnn_conv2d(qnn_conv_profiles):
         bld = QnnBuilder(qnn_profile=q)
 
         # Start build a test graph
-        data = bld.arg(
-            shape=d_shape, dtype="uint8", is_const=c.Data, filler=filler_uni(0, 20)
-        )
+        data = bld.arg(shape=d_shape, dtype="uint8", is_const=c.Data, filler=filler_uni(0, 20))
         d_zp, d_scl = bld.make_zp_and_scl("d", IC)
 
         # Convolution
-        wgh = bld.arg(
-            shape=w_shape, dtype="int8", is_const=c.Weights, filler=filler_uni(-20, 20)
-        )
+        wgh = bld.arg(shape=w_shape, dtype="int8", is_const=c.Weights, filler=filler_uni(-20, 20))
         w_zp, w_scl = bld.make_zp_and_scl("k")
 
         op = tvm.relay.qnn.op.conv2d(
@@ -1657,18 +1574,13 @@ def test_qnn_conv2d(qnn_conv_profiles):
         # Optional bias
         if c.Bias is not None:
             bias = bld.arg(
-                shape=b_shape,
-                dtype="int32",
-                is_const=c.Bias,
-                filler=filler_uni(-50, 50),
+                shape=b_shape, dtype="int32", is_const=c.Bias, filler=filler_uni(-50, 50)
             )
             op = tvm.relay.add(op, bias)
 
         # Re-quantization
         rq_in_zp = bld.make_zp(0)
-        rq_in_scl = bld.make_scl(
-            q.d_scl * q.k_scl
-        )  # in real cases that should be a vector
+        rq_in_scl = bld.make_scl(q.d_scl * q.k_scl)  # in real cases that should be a vector
         rq_out_zp, rq_out_scl = bld.make_zp_and_scl("rq")
 
         op = tvm.relay.qnn.op.requantize(
@@ -1681,17 +1593,13 @@ def test_qnn_conv2d(qnn_conv_profiles):
 
         # Optional sum (ResNet like)
         if c.Sum is not None:
-            sum_in = bld.arg(
-                dtype="uint8", shape=s_shape, filler=filler_uni(0, 10), is_const=c.Sum
-            )
+            sum_in = bld.arg(dtype="uint8", shape=s_shape, filler=filler_uni(0, 10), is_const=c.Sum)
 
             lhs_zp, lhs_scl = bld.make_zp_and_scl("rq")
             rhs_zp, rhs_scl = bld.make_zp_and_scl("sum")
             out_zp, out_scl = bld.make_zp_and_scl("o")
 
-            op = tvm.relay.qnn.op.add(
-                op, sum_in, lhs_scl, lhs_zp, rhs_scl, rhs_zp, out_scl, out_zp
-            )
+            op = tvm.relay.qnn.op.add(op, sum_in, lhs_scl, lhs_zp, rhs_scl, rhs_zp, out_scl, out_zp)
             op = tvm.relay.clip(op, a_min=0.0, a_max=255.0)
 
         return bld.finalize(op)
@@ -1715,6 +1623,7 @@ conv_profiles = tvm.testing.parameter(
 )
 
 
+@has_tachikoma_codegen
 def test_conv2d_plus(conv_profiles):
     def generate_model(p, c):
         np.random.seed(0)
@@ -1784,4 +1693,112 @@ qnn_dense_profiles = tvm.testing.parameter(
     }
 )
 
-test_qnn_conv2d(qnn_conv_profiles)
+
+@has_tachikoma_codegen
+def test_qnn_dense(qnn_dense_profiles):
+    def generate_model(p, c, q):
+        np.random.seed(0)
+
+        d_shape = [p.N, p.IC]
+        w_shape = [p.OC, p.IC]
+        b_shape = [p.OC]
+        s_shape = [p.N, p.OC]
+
+        bld = QnnBuilder(qnn_profile=q)
+
+        # Start build a test graph
+        data = bld.arg(shape=d_shape, dtype="uint8", is_const=c.Data, filler=filler_uni(0, 20))
+        d_zp, d_scl = bld.make_zp_and_scl("d", p.IC)
+
+        # Convolution
+        wgh = bld.arg(shape=w_shape, dtype="int8", is_const=c.Weights, filler=filler_uni(-20, 20))
+        w_zp, w_scl = bld.make_zp_and_scl("k")
+
+        op = tvm.relay.qnn.op.dense(
+            data, wgh, d_zp, w_zp, d_scl, w_scl, units=p.OC, out_dtype="int32"
+        )
+        # Optional bias
+        if c.Bias is not None:
+            bias = bld.arg(
+                shape=b_shape, dtype="int32", is_const=c.Bias, filler=filler_uni(-50, 50)
+            )
+            op = tvm.relay.add(op, bias)
+
+        # Re-quantization
+        rq_in_zp = bld.make_zp(0)
+        rq_in_scl = bld.make_scl(q.d_scl * q.k_scl)  # in real cases that should be a vector
+        rq_out_zp, rq_out_scl = bld.make_zp_and_scl("rq")
+
+        op = tvm.relay.qnn.op.requantize(
+            op, rq_in_scl, rq_in_zp, rq_out_scl, rq_out_zp, out_dtype="int32"
+        )
+        op = tvm.relay.clip(
+            op, a_min=0.0, a_max=255.0
+        )  # pytorch frontend specific, I guess it's redundant
+        op = tvm.relay.cast(op, dtype="uint8")
+
+        # Optional sum (ResNet like)
+        if c.Sum is not None:
+            sum_in = bld.arg(dtype="uint8", shape=s_shape, filler=filler_uni(0, 10), is_const=c.Sum)
+
+            lhs_zp, lhs_scl = bld.make_zp_and_scl("rq")
+            rhs_zp, rhs_scl = bld.make_zp_and_scl("sum")
+            out_zp, out_scl = bld.make_zp_and_scl("o")
+
+            op = tvm.relay.qnn.op.add(op, sum_in, lhs_scl, lhs_zp, rhs_scl, rhs_zp, out_scl, out_zp)
+            op = tvm.relay.clip(op, a_min=0.0, a_max=255.0)
+
+        return bld.finalize(op)
+
+    conv_p, arg_p, quant_p = qnn_dense_profiles
+    ref_mod, args = generate_model(conv_p, arg_p, quant_p)
+    mod = partition_for_tachikoma(ref_mod)
+
+    # atol=1 means int values should match with +-1 quantum value tolerance
+    check_result(mod, ref_mod, args, tol=1e-10, atol=1, desired_compiler="tachikoma")
+
+
+dense_profiles = tvm.testing.parameter(
+    by_dict={
+        "Base": (base_dense_profile, acp_regular),
+        "WithSum": (base_dense_profile, acp_with_sum),
+    }
+)
+
+
+@has_tachikoma_codegen
+def test_dense_plus(dense_profiles):
+    def generate_model(p, c):
+        np.random.seed(0)
+
+        d_shape = [p.N, p.IC]
+        w_shape = [p.OC, p.IC]
+        b_shape = [p.OC]
+        s_shape = [p.N, p.OC]
+
+        c_dim = 1
+
+        bld = QnnBuilder()
+
+        op = bld.arg(shape=d_shape, dtype="float32", is_const=c.Data)
+        wgh = bld.arg(shape=w_shape, dtype="float32", is_const=c.Weights)
+        op = tvm.relay.nn.dense(op, wgh, out_dtype="float32")
+
+        if c.Bias is not None:
+            bias = bld.arg(shape=b_shape, dtype="float32", is_const=c.Bias)
+            op = tvm.relay.nn.bias_add(op, bias, axis=c_dim)
+
+        if c.Sum is not None:
+            sum_in = bld.arg(shape=s_shape, dtype="float32", is_const=c.Sum)
+            op = tvm.relay.op.add(op, sum_in)
+
+        return bld.finalize(op)
+
+    dense_p, arg_p = dense_profiles
+    ref_mod, args = generate_model(dense_p, arg_p)
+    mod = partition_for_tachikoma(ref_mod)
+    check_result(mod, ref_mod, args, tol=1e-5, desired_compiler="tachikoma")
+
+
+if __name__ == "__main__":
+    tvm.testing.main()
