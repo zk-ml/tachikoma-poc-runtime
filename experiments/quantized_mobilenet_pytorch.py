@@ -144,6 +144,7 @@ target = tvm.target.Target("llvm", host="llvm")
 
 with tvm.transform.PassContext(opt_level=3):
     mod = byoc_seq(mod)
+    print(mod)
     lib = relay.build(mod, target=target, params=params)
 
 from tvm.contrib import graph_executor
