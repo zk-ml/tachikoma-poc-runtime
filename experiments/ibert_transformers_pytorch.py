@@ -12,7 +12,7 @@ input_name = "input_ids"
 model_name = "kssteven/ibert-roberta-base"  # "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForMaskedLM.from_pretrained(
-    model_name, return_dict=False, quant_mode=True
+    model_name, return_dict=False, quant_mode=True, torchscript=True
 )
 
 text = "I'm sorry, Dave. [MASK]"
