@@ -114,7 +114,7 @@ print(mod)
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
 
-with tvm.transform.PassContext(opt_level=2):
+with tvm.transform.PassContext(opt_level=1):
     graph, lib, params = relay.build(mod, target=target, params=params)
 
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, dev)
