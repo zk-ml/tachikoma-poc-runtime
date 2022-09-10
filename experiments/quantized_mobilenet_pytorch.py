@@ -100,21 +100,30 @@ mod, params = relay.frontend.from_pytorch(
 )
 print(mod)  # comment in to see the QNN IR dump
 
+# Tachikoma
+from tvm.relay.op.contrib.tachikoma import pattern_table
+
+patterns = pattern_table()
+
+mod = relay.transform.MergeComposite(patterns)(mod)
+mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
+mod = relay.transform.MergeCompilerRegions()(mod)
+mod = relay.transform.PartitionGraph()(mod)
+
 target = tvm.target.Target("llvm", host="llvm")
 dev = tvm.cpu(0)
 
-if __name__ == "__main__":
-    with tvm.transform.PassContext(opt_level=2):
-        lib = relay.build(mod, target=target, params=params)
+with tvm.transform.PassContext(opt_level=2):
+    lib = relay.build(mod, target=target, params=params)
 
-    from tvm.contrib import graph_executor
+from tvm.contrib import graph_executor
 
-    m = graph_executor.GraphModule(lib["default"](dev))
-    # Set inputs
-    m.set_input(input_name, inp)
-    # Execute
-    m.run()
-    # Get outputs
-    tvm_output = m.get_output(0).numpy()
+m = graph_executor.GraphModule(lib["default"](dev))
+# Set inputs
+m.set_input(input_name, inp)
+# Execute
+m.run()
+# Get outputs
+tvm_output = m.get_output(0).numpy()
 
-    print(np.absolute(tvm_output - pt_result).mean())
+print(np.absolute(tvm_output - pt_result).mean())
