@@ -21,3 +21,15 @@ I've been working on a project, tachikoma, that seeks to extend TVM into a runti
 This will be a fully open-sourced and "wish I had more free time" project, so I will sporadically work on it and publish all progress here: https://github.com/zk-ml.
 
 Finally, thanks to the people I've consulted around this idea: @szgbo, @junrushao, @recmo, @anihamde, @bhuan_, @lm_zheng, @LigengZhu, @YassineLanda, and @l_udens. Excited for things to come!
+
+# Citing
+
+If you find this helpful, please consider citing:
+
+```
+@misc{liao_tachikoma_2022, 
+    title={Tachikoma: open zero-knowledge runtime interface for neural networks}, url={https://github.com/zk-ml/tachikoma-runtime},
+    author={Liao, Peiyuan},
+    year={2022}
+} 
+```
