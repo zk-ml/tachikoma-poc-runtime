@@ -55,4 +55,4 @@ for _ in range(5):
 
     out = rt_mod.get_output(0)
 
-    export_fn(rt_mod.module)
+    export_fn(lib)
