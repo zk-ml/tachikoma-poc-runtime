@@ -43,11 +43,15 @@ with tvm.transform.PassContext(opt_level=0):
 with open("graph.json", "w") as f:
     f.write(graph)
 
+export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
+
+print("first run")
+export_fn(lib, "/data/tachikoma_results/serialized.ndarray")
+
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
 
-export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
-
+print("subsequent runs")
 for _ in range(5):
     for name, data in params.items():
         rt_mod.set_input(name, data)
@@ -55,4 +59,4 @@ for _ in range(5):
 
     out = rt_mod.get_output(0)
 
-    export_fn(lib)
+    export_fn(lib, "/data/tachikoma_results/serialized.ndarray")
