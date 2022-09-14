@@ -52,11 +52,11 @@ device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
 
 print("subsequent runs")
-for _ in range(5):
+for i in range(5):
     for name, data in params.items():
         rt_mod.set_input(name, data)
     rt_mod.run()
 
     out = rt_mod.get_output(0)
 
-    export_fn(lib, "/data/tachikoma_results/serialized.ndarray")
+    export_fn(lib, f"/data/tachikoma_results/serialized_{i}.ndarray")
