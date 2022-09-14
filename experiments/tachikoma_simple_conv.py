@@ -2,20 +2,6 @@ import numpy as np
 import tvm
 from tvm.relay.op.contrib.tachikoma import pattern_table
 from tvm import relay
-from tvm.relay import testing
-import os
-import sys
-import numpy as np
-import tvm
-from tvm.relay.backend import te_compiler
-from tvm.relay.backend.runtime import Runtime
-import tvm.relay.testing
-from tvm import relay
-from tvm import runtime as tvm_runtime
-from tvm.relay import transform
-from tvm.contrib import utils
-import onnx
-from tvm.contrib.download import download_testdata
 
 dtype = "float32"
 scale = 100
@@ -56,8 +42,6 @@ with tvm.transform.PassContext(opt_level=0):
 
 with open("graph.json", "w") as f:
     f.write(graph)
-
-#print(lib, params)
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
