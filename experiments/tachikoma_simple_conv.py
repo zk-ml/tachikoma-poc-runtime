@@ -3,7 +3,6 @@ import tvm
 from tvm.relay.op.contrib.tachikoma import pattern_table
 from tvm import relay
 from tvm.relay import testing
-import tvm.contrib.graph_executor as runtime
 import os
 import sys
 import numpy as np
@@ -62,10 +61,14 @@ with open("graph.json", "w") as f:
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.create(graph, lib, device)
-for name, data in params.items():
-    rt_mod.set_input(name, data)
-rt_mod.run()
 
-out = rt_mod.get_output(0)
+export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
 
-#print(out)
+for _ in range(5):
+    for name, data in params.items():
+        rt_mod.set_input(name, data)
+    rt_mod.run()
+
+    out = rt_mod.get_output(0)
+
+    export_fn(rt_mod)
