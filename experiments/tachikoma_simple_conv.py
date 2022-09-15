@@ -32,7 +32,7 @@ with tvm.transform.PassContext(opt_level=0):
 
 export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
 
-explib = lib.libmod
+explib = lib.get_lib()
 
 print("first run")
 export_fn(explib, "/data/tachikoma_results/serialized.ndarray")
