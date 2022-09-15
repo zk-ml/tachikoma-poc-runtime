@@ -38,7 +38,7 @@ print("first run")
 export_fn(explib, "/data/tachikoma_results/serialized.ndarray")
 
 device = tvm.cpu()
-rt_mod = tvm.contrib.graph_executor.module.GraphModule(lib["default"](device))
+rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
 
 print("subsequent runs")
 for i in range(5):
