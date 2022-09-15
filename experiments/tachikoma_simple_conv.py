@@ -42,9 +42,9 @@ rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
 
 print("subsequent runs")
 for i in range(5):
-    for name, data in params.items():
+    for name, data in lib.get_params().items():
         print(name, data.shape)
-        data = tvm.nd.array(data + i)
+        data = tvm.nd.array(data.numpy() + i)
         rt_mod.set_input(name, data)
     rt_mod.run()
 
