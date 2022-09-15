@@ -27,28 +27,27 @@ params = {"weight": kern, "x": data}
 mod = tachikoma.partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 
-lib = mod.libmod
+with tvm.transform.PassContext(opt_level=0):
+    lib = relay.build(mod, target="llvm", params=params)
+
 export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
 
+explib = lib.libmod
+
 print("first run")
-export_fn(lib, "/data/tachikoma_results/serialized.ndarray")
+export_fn(explib, "/data/tachikoma_results/serialized.ndarray")
 
 device = tvm.cpu()
-target = "llvm"
-
-with tvm.transform.PassContext(opt_level=3):
-    rt_mod = relay.create_executor(
-        "graph", mod=mod, device=device, target=target
-    )
-    func = rt_mod.evaluate()
+rt_mod = tvm.contrib.graph_executor.module.GraphModule(lib["default"](device))
 
 print("subsequent runs")
 for i in range(5):
-    inp = {}
     for name, data in params.items():
         print(name, data.shape)
         data = tvm.nd.array(data.numpy() + i)
-        inp[name] = data
-    out = func(**inp)
+        rt_mod.set_input(name, data)
+    rt_mod.run()
 
-    export_fn(lib, f"/data/tachikoma_results/serialized_{i}.ndarray")
+    out = rt_mod.get_output(0)
+
+    export_fn(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
