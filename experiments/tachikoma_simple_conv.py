@@ -44,7 +44,7 @@ print("subsequent runs")
 for i in range(5):
     for name, data in params.items():
         print(name, data.shape)
-        data = tvm.nd.array(data.numpy() + i)
+        data = tvm.nd.array(data + i)
         rt_mod.set_input(name, data)
     rt_mod.run()
 
