@@ -28,7 +28,7 @@ mod = tachikoma.partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
-with tvm.transform.PassContext(opt_level=0):
+with tvm.transform.PassContext(opt_level=3):
     lib = relay.build(mod, target="llvm", params=params)
 
 export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
