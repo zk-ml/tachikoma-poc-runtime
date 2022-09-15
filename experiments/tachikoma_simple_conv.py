@@ -26,6 +26,7 @@ mod["main"] = relay.Function([x, w], z)
 params = {"weight": kern, "x": data}
 mod = tachikoma.partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
+print(mod.get_global_vars())
 
 with tvm.transform.PassContext(opt_level=0):
     lib = relay.build(mod, target="llvm", params=params)
