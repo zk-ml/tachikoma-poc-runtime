@@ -1,6 +1,6 @@
 import numpy as np
 import tvm
-from tvm.relay.op.contrib.tachikoma import pattern_table
+from tvm.relay.op.contrib import tachikoma
 from tvm import relay
 
 dtype = "float32"
@@ -23,22 +23,12 @@ z = relay.nn.relu(y)
 mod = tvm.IRModule()
 mod["main"] = relay.Function([x, w], z)
 
-patterns = pattern_table()
-# print(patterns)
-
-mod = relay.transform.MergeComposite(patterns)(mod)
+params = {"weight": kern, "x": data}
+mod = tachikoma.partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
-mod = relay.transform.AnnotateTarget(["tachikoma"])(mod)
-print(mod["main"].astext(show_meta_data=False), "\n")
-mod = relay.transform.MergeCompilerRegions()(mod)
-print(mod["main"].astext(show_meta_data=False), "\n")
-mod = relay.transform.PartitionGraph()(mod)
-print(mod["main"].astext(show_meta_data=False), "\n")
-
-map_inputs = {"weight": kern, "x": data}
 
 with tvm.transform.PassContext(opt_level=0):
-    graph, lib, params = relay.build(mod, target="llvm", params=map_inputs)
+    graph, lib, params = relay.build(mod, target="llvm", params=params)
 
 with open("graph.json", "w") as f:
     f.write(graph)
