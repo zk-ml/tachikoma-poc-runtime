@@ -8,9 +8,9 @@ import tvm.relay.testing
 dtype = "float32"
 ishape = (1, 3, 224, 224)
 mod, params = relay.testing.mobilenet.get_workload(batch_size=1, dtype="float32")
-print(mod["main"].astext(show_meta_data=False), "\n")
+#print(mod["main"].astext(show_meta_data=False), "\n")
 mod = transform.AnnotateTarget(["tachikoma"])(mod)
-mod = transform.MergeCompilerRegions()(mod)
+#mod = transform.MergeCompilerRegions()(mod)
 mod = transform.PartitionGraph()(mod)
 #mod = tachikoma.partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
