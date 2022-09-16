@@ -16,7 +16,7 @@ mod = transform.PartitionGraph()(mod)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
-with tvm.transform.PassContext(opt_level=3):
+with tvm.transform.PassContext(opt_level=1):
     lib = relay.build(mod, target="llvm", params=params)
 
 export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
