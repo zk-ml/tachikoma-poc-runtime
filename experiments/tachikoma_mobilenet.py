@@ -16,7 +16,7 @@ mod = transform.PartitionGraph()(mod)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
-with tvm.transform.PassContext(opt_level=1):
+with tvm.transform.PassContext(opt_level=3):
     lib = relay.build(mod, target="llvm", params=params)
 
 export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
@@ -32,7 +32,7 @@ rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
 print("subsequent runs")
 for i in range(5):
     for name, data in lib.get_params().items():
-        print(name, data.shape)
+        #print(name, data.shape)
         data = tvm.nd.array(data.numpy() + i)
         rt_mod.set_input(name, data)
     rt_mod.run()
