@@ -2,6 +2,7 @@ import numpy as np
 import tvm
 from tvm.relay.op.contrib import tachikoma
 from tvm import relay
+import tvm.relay.testing
 
 dtype = "float32"
 ishape = (1, 3, 224, 224)
