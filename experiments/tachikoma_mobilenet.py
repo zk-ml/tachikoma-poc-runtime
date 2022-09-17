@@ -38,5 +38,5 @@ for i in range(2):
         func = relay.create_executor("graph",
             mod=mod, device=device, target=target).evaluate()
     
-    func(**params)
+    #func(**params)
     
