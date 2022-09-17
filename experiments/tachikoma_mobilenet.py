@@ -27,6 +27,7 @@ explib = lib.get_lib()
 #print(type(lib["default"]))
 print(lib)
 print(explib)
+print(lib["default"](device))
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
