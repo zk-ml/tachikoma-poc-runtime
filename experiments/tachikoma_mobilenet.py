@@ -38,7 +38,7 @@ rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 print("subsequent runs")
 for i in range(2):
     #explib["TachikomaSetExportPath"](f"/data/tachikoma_results/serialized_{i}.ndarray")
-    path_set(rmod.mod, f"/data/tachikoma_results/serialized_{i}.ndarray")
+    path_set(rmod, f"/data/tachikoma_results/serialized_{i}.ndarray")
     path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
     
     for name, data in lib.get_params().items():
