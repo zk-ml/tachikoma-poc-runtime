@@ -23,8 +23,10 @@ with tvm.transform.PassContext(opt_level=1):
 path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
 explib = lib.get_lib()
-print(type(explib))
-print(type(lib["default"]))
+#print(type(explib))
+#print(type(lib["default"]))
+print(lib)
+print(explib)
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
