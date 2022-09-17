@@ -2,7 +2,7 @@ import numpy as np
 import tvm
 from tvm.relay.op.contrib import tachikoma
 from tvm import relay
-from tvm.relay import transform
+from tvm.relay import build_module
 import tvm.relay.testing
 
 device = tvm.cpu()
@@ -20,11 +20,11 @@ print(mod.get_global_vars())
 print(type(mod))
 
 with tvm.transform.PassContext(opt_level=1):
-    lib = relay.build(mod, target=target, params=params)
+    lib, bldmod = build_module.build_with_bldmod(mod, target=target, params=params)
 
 path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
-explib = lib.get_lib()
+explib = bldmod._get_module()
 rmod = lib["default"](device)
 #print(type(explib))
 #print(type(lib["default"]))
