@@ -25,17 +25,20 @@ with tvm.transform.PassContext(opt_level=1):
 path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
 explib = lib.get_lib()
+rmod = lib["default"](device)
 #print(type(explib))
 #print(type(lib["default"]))
 print(lib)
 print(explib)
-print(lib["default"](device))
+print(rmod)
+print(type(rmod))
 
-rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
+rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
 print("subsequent runs")
 for i in range(2):
     #explib["TachikomaSetExportPath"](f"/data/tachikoma_results/serialized_{i}.ndarray")
+    path_set(rmod.mod, f"/data/tachikoma_results/serialized_{i}.ndarray")
     path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
     
     for name, data in lib.get_params().items():
