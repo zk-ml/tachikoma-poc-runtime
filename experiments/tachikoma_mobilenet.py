@@ -31,7 +31,7 @@ rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
 
 print("subsequent runs")
 for i in range(2):
-    lib["TachikomaSetExportPath"](f"/data/tachikoma_results/serialized_{i}.ndarray")
+    explib["TachikomaSetExportPath"](f"/data/tachikoma_results/serialized_{i}.ndarray")
 
     for name, data in lib.get_params().items():
         print(name, data.shape)
