@@ -31,12 +31,9 @@ print(mod.get_global_vars())
 with tvm.transform.PassContext(opt_level=3):
     lib = relay.build(mod, target="llvm", params=params)
 
-export_fn = tvm.get_global_func("runtime.TachikomaExportModule")
+path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
 explib = lib.get_lib()
-
-print("first run")
-export_fn(explib, "/data/tachikoma_results/serialized.ndarray")
 
 device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
@@ -51,4 +48,4 @@ for i in range(5):
 
     out = rt_mod.get_output(0)
 
-    export_fn(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
+    path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
