@@ -19,10 +19,21 @@ print(type(mod))
 with tvm.transform.PassContext(opt_level=1):
     lib, bldmod = build_module.build_with_bldmod(mod, target=target, params=params)
 
+path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
+
+explib = bldmod._get_module()
 rmod = lib["default"](device)
+#print(type(explib))
+#print(type(lib["default"]))
+print(lib)
+print(explib)
+print(type(explib))
+
 rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
-for i in range(2):    
+for i in range(2):
+    path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
+    
     for name, data in lib.get_params().items():
         print(name, data.shape)
         data = tvm.nd.array(data.numpy() + i)
