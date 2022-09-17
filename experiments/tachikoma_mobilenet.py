@@ -31,7 +31,6 @@ print(type(explib))
 
 rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
-print("subsequent runs")
 for i in range(2):
     path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
     
