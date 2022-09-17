@@ -5,6 +5,8 @@ from tvm import relay
 from tvm.relay import transform
 import tvm.relay.testing
 
+device = tvm.cpu()
+target = "llvm"
 dtype = "float32"
 ishape = (1, 3, 224, 224)
 mod, params = relay.testing.mobilenet.get_workload(batch_size=1, dtype="float32")
@@ -18,7 +20,7 @@ print(mod.get_global_vars())
 print(type(mod))
 
 with tvm.transform.PassContext(opt_level=1):
-    lib = relay.build(mod, target="llvm", params=params)
+    lib = relay.build(mod, target=target, params=params)
 
 path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
@@ -29,7 +31,6 @@ print(lib)
 print(explib)
 print(lib["default"](device))
 
-device = tvm.cpu()
 rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
 
 print("subsequent runs")
