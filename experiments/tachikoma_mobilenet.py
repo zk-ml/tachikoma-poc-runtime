@@ -22,7 +22,7 @@ with tvm.transform.PassContext(opt_level=1):
 
 path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
 
-explib = lib.module
+explib = lib.get_lib()
 print(type(explib))
 print(type(lib))
 
