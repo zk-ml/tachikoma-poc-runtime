@@ -79,7 +79,7 @@ class LeNet_Small_Quant(nn.Module):
         return x_quant.int_repr().numpy(), x_quant.q_scale(), x_quant.q_zero_point()
 
 model = LeNet_Small_Quant()
-pt_inp = torch.tensor(np.ones((1, 1, 28, 28))).float()
+pt_inp = torch.tensor(np.ones((1, 3, 32, 32))).float()
 
 model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
 print(model.qconfig)
