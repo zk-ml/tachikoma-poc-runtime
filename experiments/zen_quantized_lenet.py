@@ -79,12 +79,14 @@ class LeNet_Small_Quant(nn.Module):
         return x_quant.int_repr().numpy(), x_quant.q_scale(), x_quant.q_zero_point()
 
 model = LeNet_Small_Quant()
-pt_inp = torch.tensor(np.ones((1, 3, 32, 32))).float()
+ishape = (1, 3, 32, 32)
+pt_inp = torch.tensor(np.random.uniform(-1, 1, size=ishape)).float()
 
 model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
 print(model.qconfig)
 torch.quantization.prepare(model, inplace=True)
-
+for _ in range(100):
+    model(torch.tensor(np.random.uniform(-1, 1, size=ishape)).float())
 # Convert to quantized model
 torch.quantization.convert(model, inplace=True)
 
@@ -96,7 +98,7 @@ with torch.no_grad():
 print(script_module)
 
 input_name = "input"  # the input name can be be arbitrary for PyTorch frontend.
-input_shapes = [(input_name, (1, 3, 224, 224))]
+input_shapes = [(input_name, ishape)]
 mod, params = relay.frontend.from_pytorch(
     script_module, input_shapes, keep_quantized_weight=True
 )
