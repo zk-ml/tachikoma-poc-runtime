@@ -7,7 +7,7 @@ import tvm.relay.testing
 
 device = tvm.cpu()
 target = "llvm"
-dtype = "int8"
+dtype = "float32"
 ishape = (1, 3, 224, 224)
 mod, params = relay.testing.mobilenet.get_workload(batch_size=1, dtype=dtype)
 print(mod["main"].astext(show_meta_data=False), "\n")
