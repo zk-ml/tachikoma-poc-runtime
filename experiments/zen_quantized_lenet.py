@@ -120,4 +120,4 @@ input_dict = {input_name : np.random.uniform(ishape).astype("float32")}
 with tvm.transform.PassContext(opt_level=1):
     func = relay.create_executor("vm", mod=mod, device=device, target=target).evaluate()
 
-func(**input, **params)
+func(**input_dict, **params)
