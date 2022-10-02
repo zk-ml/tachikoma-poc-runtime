@@ -22,5 +22,5 @@ with tvm.transform.PassContext(opt_level=1):
 print(params.keys())
 
 for _ in range(3):
-    input_dict = {"data": np.random.uniform(**ishape).astype("float32")}
+    input_dict = {"data": np.random.uniform(*ishape).astype("float32")}
     func(**input_dict, **params)
