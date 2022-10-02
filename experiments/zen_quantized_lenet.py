@@ -29,7 +29,7 @@ class LeNet_Small_Quant(nn.Module):
         x = self.quant(x)
         x = self.conv1(x)
         x = self.act1(x)
-        x = self.pool1(x)
+        #x = self.pool1(x)
         #x = self.conv2(x)
         #x = self.act2(x)
         #x = self.pool2(x)
