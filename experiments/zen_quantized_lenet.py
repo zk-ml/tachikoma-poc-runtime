@@ -105,6 +105,8 @@ mod, params = relay.frontend.from_pytorch(
     script_module, input_shapes, keep_quantized_weight=True
 )
 
+print(params)
+
 device = tvm.cpu()
 target = "llvm"
 print(mod["main"].astext(show_meta_data=False), "\n")
