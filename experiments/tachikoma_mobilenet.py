@@ -22,7 +22,7 @@ with tvm.transform.PassContext(opt_level=1):
 rmod = lib["default"](device)
 rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
-for i in range(2):    
+for i in range(2):
     print(len(lib.get_params()), " params")
     for name, data in lib.get_params().items():
         print(name, data.shape)
@@ -31,4 +31,3 @@ for i in range(2):
     rt_mod.run()
 
     out = rt_mod.get_output(0)
-

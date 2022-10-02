@@ -9,6 +9,7 @@ from torchvision.models import quantization
 from tvm.contrib.download import download_testdata
 from PIL import Image
 
+
 def get_transform():
     import torchvision.transforms as transforms
 
@@ -24,16 +25,19 @@ def get_transform():
         ]
     )
 
+
 def get_real_image(im_height, im_width):
     img_url = "https://github.com/dmlc/mxnet.js/blob/main/data/cat.png?raw=true"
     img_path = download_testdata(img_url, "cat.png", module="data")
     return Image.open(img_path).resize((im_height, im_width))
+
 
 def get_imagenet_input():
     im = get_real_image(224, 224)
     preprocess = get_transform()
     pt_tensor = preprocess(im)
     return np.expand_dims(pt_tensor.numpy(), 0)
+
 
 inp = get_imagenet_input()
 qmodel = quantization.resnet18(pretrained=True, quantize=True).eval()
@@ -65,7 +69,7 @@ with tvm.transform.PassContext(opt_level=1):
 rmod = lib["default"](device)
 rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
-for i in range(2):    
+for i in range(2):
     for name, data in lib.get_params().items():
         print(name, data.shape)
         data = tvm.nd.array(data.numpy() + i)
