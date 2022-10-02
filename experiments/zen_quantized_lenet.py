@@ -145,5 +145,5 @@ with tvm.transform.PassContext(opt_level=1):
 print(params.keys())
 
 for _ in range(3):
-    input_dict = {input_name: np.random.uniform(ishape).astype("float32")}
+    input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
     func(**input_dict, **params)
