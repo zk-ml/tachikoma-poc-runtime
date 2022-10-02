@@ -8,6 +8,7 @@ from tvm import relay
 from tvm.relay import build_module
 import tvm.relay.testing
 
+QUANT = False
 class LeNet_Small_Quant(nn.Module):
     def __init__(self):
         super(LeNet_Small_Quant, self).__init__()
@@ -26,7 +27,7 @@ class LeNet_Small_Quant(nn.Module):
         self.dequant = DeQuantStub()
 
     def forward(self, x):
-        x = self.quant(x)
+        if QUANT: x = self.quant(x)
         x = self.conv1(x)
         x = self.act1(x)
         #x = self.pool1(x)
@@ -39,7 +40,7 @@ class LeNet_Small_Quant(nn.Module):
         #x = self.linear1(x)
         #x = self.act4(x)
         #x = self.linear2(x)
-        x = self.dequant(x)
+        if QUANT: x = self.dequant(x)
         return x
 
     def dump_feat_param(self):
@@ -82,13 +83,14 @@ model = LeNet_Small_Quant()
 ishape = (1, 3, 32, 32)
 pt_inp = torch.tensor(np.random.uniform(-1, 1, size=ishape)).float()
 
-model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
-print(model.qconfig)
-torch.quantization.prepare(model, inplace=True)
-for _ in range(100):
-    model(torch.tensor(np.random.uniform(-1, 1, size=ishape)).float())
-# Convert to quantized model
-torch.quantization.convert(model, inplace=True)
+if QUANT: 
+    model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
+    print(model.qconfig)
+    torch.quantization.prepare(model, inplace=True)
+    for _ in range(100):
+        model(torch.tensor(np.random.uniform(-1, 1, size=ishape)).float())
+    # Convert to quantized model
+    torch.quantization.convert(model, inplace=True)
 
 script_module = torch.jit.trace(model, pt_inp).eval()
 
