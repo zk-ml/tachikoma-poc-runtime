@@ -88,7 +88,7 @@ torch.quantization.prepare(model, inplace=True)
 for _ in range(100):
     model(torch.tensor(np.random.uniform(-1, 1, size=ishape)).float())
 # Convert to quantized model
-torch.quantization.convert(model, inplace=True)
+# torch.quantization.convert(model, inplace=True)
 
 script_module = torch.jit.trace(model, pt_inp).eval()
 
