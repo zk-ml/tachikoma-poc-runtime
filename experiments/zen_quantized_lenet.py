@@ -8,7 +8,7 @@ from tvm import relay
 from tvm.relay import build_module
 import tvm.relay.testing
 
-QUANT = True
+QUANT = False
 
 
 class LeNet_Small_Quant(nn.Module):
