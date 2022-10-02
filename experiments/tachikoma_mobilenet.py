@@ -17,17 +17,10 @@ print(mod.get_global_vars())
 print(type(mod))
 
 with tvm.transform.PassContext(opt_level=1):
-    lib, bldmod = build_module.build_with_bldmod(mod, target=target, params=params)
+    func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
 
-rmod = lib["default"](device)
-rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
+print(params.keys())
 
-for i in range(2):
-    print(len(lib.get_params()), " params")
-    for name, data in lib.get_params().items():
-        print(name, data.shape)
-        data = tvm.nd.array(data.numpy() + i)
-        rt_mod.set_input(name, data)
-    rt_mod.run()
-
-    out = rt_mod.get_output(0)
+for _ in range(3):
+    input_dict = {}
+    func(**input_dict, **params)
