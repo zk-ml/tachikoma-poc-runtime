@@ -115,10 +115,9 @@ print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 print(type(mod))
 
-input_dict = {input_name : np.random.uniform(ishape).astype("float32")}
-
 with tvm.transform.PassContext(opt_level=1):
     func = relay.create_executor("vm", mod=mod, device=device, target=target).evaluate()
 
-#func(**input_dict, **params)
-func(**params)
+for _ in range(3):
+    input_dict = {input_name : np.random.uniform(ishape).astype("float32")}
+    func(**input_dict, **params)
