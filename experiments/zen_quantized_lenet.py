@@ -115,18 +115,9 @@ print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 print(type(mod))
 
+input_dict = {input_name : np.random.uniform(ishape).astype("float32")}
+
 with tvm.transform.PassContext(opt_level=1):
-    lib = relay.build(mod, target=target, params=params)
+    func = relay.create_executor("vm", mod=mod, device=device, target=target).evaluate()
 
-rmod = lib["default"](device)
-rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
-
-for i in range(2):    
-    print(len(lib.get_params()), " params")
-    for name, data in lib.get_params().items():
-        print(name, data.shape)
-        data = tvm.nd.array(data.numpy() + i)
-        rt_mod.set_input(name, data)
-    rt_mod.run()
-
-    out = rt_mod.get_output(0)
+func(**input, **params)
