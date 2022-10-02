@@ -120,8 +120,8 @@ rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 for i in range(2):    
     for name, data in lib.get_params().items():
         print(name, data.shape)
-        data = tvm.nd.array(data.numpy() + i)
-        rt_mod.set_input(name, data)
+        #data = tvm.nd.array(data.numpy() + i)
+        #rt_mod.set_input(name, data)
     rt_mod.run()
 
     out = rt_mod.get_output(0)
