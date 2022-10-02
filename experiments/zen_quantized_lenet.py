@@ -118,6 +118,7 @@ rmod = lib["default"](device)
 rt_mod = tvm.contrib.graph_executor.GraphModule(rmod)
 
 for i in range(2):    
+    print(len(lib.get_params()), " params")
     for name, data in lib.get_params().items():
         print(name, data.shape)
         data = tvm.nd.array(data.numpy() + i)
