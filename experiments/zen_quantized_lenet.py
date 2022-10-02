@@ -9,7 +9,7 @@ from tvm.relay import build_module
 import tvm.relay.testing
 
 QUANT = True
-
+DEBUG = True
 
 class LeNet_Small_Quant(nn.Module):
     def __init__(self):
@@ -139,11 +139,29 @@ print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 print(type(mod))
 
-with tvm.transform.PassContext(opt_level=1):
-    func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
+if DEBUG:
+    from tvm.contrib.debugger.debug_executor import GraphModuleDebug
+    with tvm.transform.PassContext(opt_level=1):
+        lib = relay.build(mod, target=target, params=params)
+    m = GraphModuleDebug(
+        lib["debug_create"]("default", device),
+        [device],
+        lib.graph_json,
+        dump_root="/tmp/tvmdbg",
+    )
+    # set inputs
+    m.set_input(input_name, tvm.nd.array(np.random.uniform(-1, 1, ishape).astype("float32")))
+    m.set_input(**params)
+    # execute
+    m.run()
+    tvm_out = m.get_output(0).numpy()
+else:
 
-print(params.keys())
+    with tvm.transform.PassContext(opt_level=1):
+        func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
 
-for _ in range(3):
-    input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
-    func(**input_dict, **params)
+    print(params.keys())
+
+    for _ in range(3):
+        input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
+        func(**input_dict, **params)
