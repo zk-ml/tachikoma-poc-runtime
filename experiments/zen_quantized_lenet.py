@@ -9,7 +9,7 @@ from tvm.relay import build_module
 import tvm.relay.testing
 
 QUANT = True
-DEBUG = True
+DEBUG = False
 
 class LeNet_Small_Quant(nn.Module):
     def __init__(self):
