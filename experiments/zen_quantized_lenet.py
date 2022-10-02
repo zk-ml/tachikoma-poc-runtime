@@ -142,6 +142,8 @@ print(type(mod))
 with tvm.transform.PassContext(opt_level=1):
     func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
 
+print(params.keys())
+
 for _ in range(3):
     input_dict = {input_name: np.random.uniform(ishape).astype("float32")}
     func(**input_dict, **params)
