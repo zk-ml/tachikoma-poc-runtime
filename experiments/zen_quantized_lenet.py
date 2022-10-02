@@ -9,7 +9,7 @@ from tvm.relay import build_module
 import tvm.relay.testing
 
 QUANT = True
-DEBUG = False
+DEBUG = True
 
 class LeNet_Small_Quant(nn.Module):
     def __init__(self):
@@ -143,6 +143,8 @@ if DEBUG:
     from tvm.contrib.debugger.debug_executor import GraphModuleDebug
     with tvm.transform.PassContext(opt_level=1):
         lib = relay.build(mod, target=target, params=params)
+    lib.export_library("./debug.so")
+    """
     m = GraphModuleDebug(
         lib["debug_create"]("default", device),
         [device],
@@ -155,6 +157,7 @@ if DEBUG:
     # execute
     m.run()
     tvm_out = m.get_output(0).numpy()
+    """
 else:
 
     with tvm.transform.PassContext(opt_level=1):
