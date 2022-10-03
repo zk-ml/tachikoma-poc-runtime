@@ -18,12 +18,12 @@ class LeNet_Small_Quant(nn.Module):
             in_channels=3, out_channels=6, kernel_size=5, stride=1, bias=False
         )
         self.act1 = nn.ReLU()
-        self.pool1 = nn.AvgPool2d(kernel_size=2)
+        self.pool1 = nn.MaxPool2d(kernel_size=2)
         self.conv2 = nn.Conv2d(
             in_channels=6, out_channels=16, kernel_size=5, stride=1, bias=False
         )
         self.act2 = nn.ReLU()
-        self.pool2 = nn.AvgPool2d(kernel_size=2)
+        self.pool2 = nn.MaxPool2d(kernel_size=2)
         self.conv3 = nn.Conv2d(
             in_channels=16, out_channels=120, kernel_size=4, stride=1, bias=False
         )  # LeNet use 5 for 32x32. For 28x28, we adjust to 4.
