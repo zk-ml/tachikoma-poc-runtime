@@ -39,16 +39,16 @@ class LeNet_Small_Quant(nn.Module):
             x = self.quant(x)
         x = self.conv1(x)
         x = self.act1(x)
-        # x = self.pool1(x)
-        # x = self.conv2(x)
-        # x = self.act2(x)
-        # x = self.pool2(x)
-        # x = self.conv3(x)
-        # x = self.act3(x)
-        # x = x.reshape(x.size(0), -1)
-        # x = self.linear1(x)
-        # x = self.act4(x)
-        # x = self.linear2(x)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.act2(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.act3(x)
+        x = x.reshape(x.size(0), -1)
+        x = self.linear1(x)
+        x = self.act4(x)
+        x = self.linear2(x)
         if QUANT:
             x = self.dequant(x)
         return x
@@ -163,6 +163,7 @@ else:
 
     print(params.keys())
 
-    for _ in range(3):
+    for i in range(3):
+        print(i)
         input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
         func(**input_dict, **params)
