@@ -173,3 +173,5 @@ else:
         actual = func_ref(**input_dict, **params)
         err = (pred.numpy() - actual.numpy()).mean()
         print(f"iter {i}: err {err}")
+        print(pred.numpy())
+        print(actual.numpy())
