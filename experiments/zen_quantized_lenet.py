@@ -167,8 +167,8 @@ else:
     print(params.keys())
 
     for i in range(3):
-        print(i)
         input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
         pred = func(**input_dict, **params)
         actual = func_ref(**input_dict, **params)
-        print(pred.numpy() - actual.numpy())
+        err = (pred.numpy() - actual.numpy()).mean()
+        print(f"iter {i}: err {err}")
