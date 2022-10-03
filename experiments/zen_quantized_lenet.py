@@ -44,9 +44,10 @@ class LeNet_Small_Quant(nn.Module):
         x = self.conv2(x)
         x = self.act2(x)
         
-        #x = self.pool2(x)
-        #x = self.conv3(x)
-        #x = self.act3(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.act3(x)
+        
         #x = x.reshape(x.size(0), -1)
         #x = self.linear1(x)
         #x = self.act4(x)
@@ -174,5 +175,5 @@ else:
         actual = func_ref(**input_dict, **params)
         err = (pred.numpy() - actual.numpy()).mean()
         print(f"iter {i}: err {err}")
-        print(pred.numpy()[0,0,0,:5])
-        print(actual.numpy()[0,0,0,:5])
+        # print(pred.numpy()[0,0,0,:5])
+        # print(actual.numpy()[0,0,0,:5])
