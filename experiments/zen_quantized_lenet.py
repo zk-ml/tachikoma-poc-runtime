@@ -171,4 +171,4 @@ else:
         input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
         pred = func(**input_dict, **params)
         actual = func_ref(**input_dict, **params)
-        print(pred-actual)
+        print(pred.numpy() - actual.numpy())
