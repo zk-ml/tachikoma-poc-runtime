@@ -45,10 +45,10 @@ class LeNet_Small_Quant(nn.Module):
         x = self.pool2(x)
         x = self.conv3(x)
         x = self.act3(x)
-        x = x.reshape(x.size(0), -1)
-        x = self.linear1(x)
-        x = self.act4(x)
-        x = self.linear2(x)
+        #x = x.reshape(x.size(0), -1)
+        #x = self.linear1(x)
+        #x = self.act4(x)
+        #x = self.linear2(x)
         if QUANT:
             x = self.dequant(x)
         return x
