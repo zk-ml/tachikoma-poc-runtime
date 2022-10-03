@@ -39,12 +39,12 @@ class LeNet_Small_Quant(nn.Module):
             x = self.quant(x)
         x = self.conv1(x)
         x = self.act1(x)
-        x = self.pool1(x)
-        x = self.conv2(x)
-        x = self.act2(x)
-        x = self.pool2(x)
-        x = self.conv3(x)
-        x = self.act3(x)
+        #x = self.pool1(x)
+        #x = self.conv2(x)
+        #x = self.act2(x)
+        #x = self.pool2(x)
+        #x = self.conv3(x)
+        #x = self.act3(x)
         #x = x.reshape(x.size(0), -1)
         #x = self.linear1(x)
         #x = self.act4(x)
@@ -125,7 +125,7 @@ print(script_module)
 
 input_name = "input"  # the input name can be be arbitrary for PyTorch frontend.
 input_shapes = [(input_name, ishape)]
-mod, params = relay.frontend.from_pytorch(
+_mod, params = relay.frontend.from_pytorch(
     script_module, input_shapes, keep_quantized_weight=True
 )
 
@@ -133,8 +133,8 @@ print(type(params))
 
 device = tvm.cpu()
 target = "llvm"
-print(mod["main"].astext(show_meta_data=False), "\n")
-mod = tachikoma.partition_for_tachikoma(mod, params)
+print(_mod["main"].astext(show_meta_data=False), "\n")
+mod = tachikoma.partition_for_tachikoma(_mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 print(type(mod))
@@ -161,9 +161,13 @@ else:
     with tvm.transform.PassContext(opt_level=1):
         func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
 
+    with tvm.transform.PassContext(opt_level=1):
+        func_ref = relay.create_executor("graph", mod=_mod, device=device, target=target).evaluate()
+
     print(params.keys())
 
     for i in range(3):
         print(i)
         input_dict = {input_name: np.random.uniform(-1, 1, ishape).astype("float32")}
-        func(**input_dict, **params)
+        pred = func(**input_dict, **params)
+        actual = func_ref(**input_dict, **params)
