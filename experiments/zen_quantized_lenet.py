@@ -3,9 +3,8 @@ import torch.nn as nn
 from torch.quantization import QuantStub, DeQuantStub
 import numpy as np
 import tvm
-from tvm.relay.op.contrib import tachikoma
+from utils import tachikoma
 from tvm import relay
-from tvm.relay import build_module
 import tvm.relay.testing
 
 QUANT = True
