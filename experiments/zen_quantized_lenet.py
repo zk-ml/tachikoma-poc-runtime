@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.quantization import QuantStub, DeQuantStub
 import numpy as np
 import tvm
-from utils import tachikoma
+from utils import partition_for_tachikoma
 from tvm import relay
 import tvm.relay.testing
 
@@ -136,7 +136,7 @@ print(type(params))
 device = tvm.cpu()
 target = "llvm"
 print(_mod["main"].astext(show_meta_data=False), "\n")
-mod = tachikoma.partition_for_tachikoma(_mod, params)
+mod = partition_for_tachikoma(_mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 print(type(mod))
