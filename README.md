@@ -1,4 +1,4 @@
-# Tachikoma: a zero-knowledge runtime for production-grade neural networks
+# tachikoma: open interface between TensorIR and arithmetic circuits
 
 On-chain deep learning is prohibitive because blockchains are not designed to run neural networks (and they shouldn't). The structure and sheer # of computations of modern architectures necessitate specialized hardware & instruction sets to squeeze as much performance as possible. Convolutional neural networks, for example, were barely effective before the advent of CUDA and only gained popularity with a thriving developer ecosystem full of mature tools. What consensus can instead offer is to prove certain characteristics of such networks, which motivates "zero-knowledge machine learning." 
 
@@ -28,7 +28,7 @@ If you find this helpful, please consider citing:
 
 ```
 @misc{liao_tachikoma_2022, 
-    title={Tachikoma: open zero-knowledge runtime interface for neural networks}, url={https://github.com/zk-ml/tachikoma-runtime},
+    title={tachikoma: open interface between TensorIR and arithmetic circuits}, url={https://github.com/zk-ml/tachikoma-runtime},
     author={Liao, Peiyuan},
     year={2022}
 } 
