@@ -27,7 +27,7 @@ _mod["main"] = relay.Function([x, w], z)
 
 params = {"weight": kern, "x": data}
 mod = partition_for_tachikoma(_mod, params)
-print(mod["main"].astext(show_meta_data=False), "\n")
+print(mod["main"].astext(show_meta_data=True), "\n")
 print(mod.get_global_vars())
 
 with tvm.transform.PassContext(opt_level=1):
@@ -43,5 +43,5 @@ for i in range(3):
     actual = func_ref(**params)
     err = (pred.numpy() - actual.numpy()).mean()
     print(f"iter {i}: err {err}")
-    # print(pred.numpy()[0,0,0,:5])
-    # print(actual.numpy()[0,0,0,:5])
+    print(pred.numpy()[0,0,0,:5])
+    print(actual.numpy()[0,0,0,:5])
