@@ -6,8 +6,9 @@ from utils import partition_for_tachikoma
 
 dtype = "int8"
 scale = 100
-dshape = (64, 1, 32, 32)
-kshape = (1, 1, 1, 1)
+dshape = (4, 64, 56, 56)
+kshape = (64, 64, 3, 3)
+weight = relay.var("weight", shape=(64, 64, 3, 3))
 
 device = tvm.cpu()
 target = "llvm"
@@ -27,7 +28,7 @@ _mod["main"] = relay.Function([x, w], z)
 
 params = {"weight": kern, "x": data}
 mod = partition_for_tachikoma(_mod, params)
-print(mod["main"].astext(show_meta_data=True), "\n")
+print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
 with tvm.transform.PassContext(opt_level=1):
