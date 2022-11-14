@@ -19,7 +19,7 @@ kern = np.random.uniform(-scale, scale, size=kshape).astype(dtype)
 w = relay.var("weight", shape=kshape, dtype=dtype)
 x = relay.var("x", shape=dshape, dtype=dtype)
 y = relay.nn.conv2d(
-    x, w, padding=(1, 1), dilation=(1, 1), groups=1, channels=1, kernel_size=(1, 1)
+    x, w
 )
 z = relay.nn.relu(y)
 
