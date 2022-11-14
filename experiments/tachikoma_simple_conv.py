@@ -9,7 +9,8 @@ scale = 100
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
 
-scale = 100
+device = tvm.cpu()
+target = "llvm"
 
 data = np.random.uniform(-scale, scale, size=dshape).astype(dtype)
 kern = np.random.uniform(-scale, scale, size=kshape).astype(dtype)
@@ -21,32 +22,26 @@ y = relay.nn.conv2d(
 )
 z = relay.nn.relu(y)
 
-mod = tvm.IRModule()
-mod["main"] = relay.Function([x, w], z)
+_mod = tvm.IRModule()
+_mod["main"] = relay.Function([x, w], z)
 
 params = {"weight": kern, "x": data}
-mod = partition_for_tachikoma(mod, params)
+mod = partition_for_tachikoma(_mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
-with tvm.transform.PassContext(opt_level=3):
-    lib = relay.build(mod, target="llvm", params=params)
+with tvm.transform.PassContext(opt_level=1):
+    func = relay.create_executor("graph", mod=mod, device=device, target=target).evaluate()
 
-path_set = tvm.get_global_func("runtime.TachikomaSetExportPath")
+with tvm.transform.PassContext(opt_level=1):
+    func_ref = relay.create_executor("graph", mod=_mod, device=device, target=target).evaluate()
 
-explib = lib.get_lib()
+print(params.keys())
 
-device = tvm.cpu()
-rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](device))
-
-print("subsequent runs")
-for i in range(5):
-    for name, data in lib.get_params().items():
-        print(name, data.shape)
-        data = tvm.nd.array(data.numpy() + i)
-        rt_mod.set_input(name, data)
-    rt_mod.run()
-
-    out = rt_mod.get_output(0)
-
-    path_set(explib, f"/data/tachikoma_results/serialized_{i}.ndarray")
+for i in range(3):
+    pred = func(**params)
+    actual = func_ref(**params)
+    err = (pred.numpy() - actual.numpy()).mean()
+    print(f"iter {i}: err {err}")
+    # print(pred.numpy()[0,0,0,:5])
+    # print(actual.numpy()[0,0,0,:5])
