@@ -2,6 +2,7 @@ import numpy as np
 import tvm
 from tvm.relay.op.contrib import tachikoma
 from tvm import relay
+from utils import partition_for_tachikoma
 
 dtype = "int8"
 scale = 100
@@ -24,7 +25,7 @@ mod = tvm.IRModule()
 mod["main"] = relay.Function([x, w], z)
 
 params = {"weight": kern, "x": data}
-mod = tachikoma.partition_for_tachikoma(mod, params)
+mod = partition_for_tachikoma(mod, params)
 print(mod["main"].astext(show_meta_data=False), "\n")
 print(mod.get_global_vars())
 
