@@ -3,7 +3,7 @@ import tvm
 from tvm.relay.op.contrib import tachikoma
 from tvm import relay
 
-dtype = "float32"
+dtype = "int8"
 scale = 100
 dshape = (64, 1, 32, 32)
 kshape = (1, 1, 1, 1)
